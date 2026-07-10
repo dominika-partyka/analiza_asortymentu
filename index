@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lidl Analiza Konkurencji - Panel Asystenta</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen font-sans pt-16">
+
+    <nav class="bg-[#002f6c] text-white shadow-md px-6 py-3 fixed top-0 left-0 right-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            
+            <button onclick="pokazEkranGlowny()" class="flex items-center gap-2 text-lg font-bold tracking-wide hover:opacity-90 transition-all cursor-pointer group">
+                <span class="bg-[#eee000] text-[#002f6c] px-2 py-0.5 rounded font-black text-sm">LIDL</span>
+                <div class="flex items-center gap-1.5 text-gray-100 group-hover:text-white">
+                    <i data-lucide="trending-up" class="w-5 h-5 text-yellow-400"></i>
+                    <span>Panel Analityczny</span>
+                </div>
+            </button>
+
+            <div class="flex items-center gap-1 md:gap-4 text-sm font-medium">
+                <button onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki'])" 
+                        class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1">
+                    <i data-lucide="book-open" class="w-4 h-4 text-blue-300"></i> <span class="hidden sm:inline">Książki</span>
+                </button>
+                <button onclick="wybierzKategorie('Back to School', 'graduation-cap', ['Biedronka', 'Action', 'Smyk', 'Empik'])" 
+                        class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1">
+                    <i data-lucide="graduation-cap" class="w-4 h-4 text-yellow-300"></i> <span class="hidden sm:inline">Back to School</span>
+                </button>
+                <button onclick="wybierzKategorie('Zabawki', 'dribbble', ['Smyk', 'Allegro', 'Empik'])" 
+                        class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1">
+                    <i data-lucide="dribbble" class="w-4 h-4 text-pink-300"></i> <span class="hidden sm:inline">Zabawki</span>
+                </button>
+                <div class="h-5 w-px bg-blue-800 mx-1 hidden sm:block"></div>
+                <span id="current-category-badge" class="hidden text-xs bg-yellow-400 text-blue-950 px-2.5 py-1 rounded-md font-bold animate-pulse"></span>
+            </div>
+
+        </div>
+    </nav>
+
+    <div id="ekran-glowny" class="max-w-5xl mx-auto px-6 py-12">
+        <div class="text-center mb-12 anim-fade-in">
+            <h2 class="text-3xl font-black text-gray-800 tracking-tight">Cześć! Co dzisiaj analizujemy?</h2>
+            <p class="text-gray-500 mt-2 text-lg">Wybierz kategorię asortymentu z kafelków poniżej lub z paska nawigacji.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki'])" 
+                 class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center del-1">
+                <div class="w-16 h-16 bg-blue-50 text-[#002f6c] rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <i data-lucide="book-open" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Książki</h3>
+                <p class="text-gray-500 text-sm">Wyszukiwanie po tytule, autorze lub kodzie EAN/ISBN w księgarniach internetowych.</p>
+            </div>
+
+            <div onclick="wybierzKategorie('Back to School', 'graduation-cap', ['Biedronka', 'Action', 'Smyk', 'Empik'])" 
+                 class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center del-2">
+                <div class="w-16 h-16 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-yellow-500 group-hover:text-white transition-colors">
+                    <i data-lucide="graduation-cap" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Back to School</h3>
+                <p class="text-gray-500 text-sm">Analiza sezonowych artykułów szkolnych, artykułów papierniczych i e-gazetek.</p>
+            </div>
+
+            <div onclick="wybierzKategorie('Zabawki', 'dribbble', ['Smyk', 'Allegro', 'Empik'])" 
+                 class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center del-3">
+                <div class="w-16 h-16 bg-pink-50 text-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-pink-500 group-hover:text-white transition-colors">
+                    <i data-lucide="dribbble" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Zabawki</h3>
+                <p class="text-gray-500 text-sm">Porównywanie cen zabawek, klocków i gier planszowych u kluczowych dystrybutorów.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="ekran-kategorii" class="hidden max-w-4xl mx-auto px-6 py-10">
+        <button onclick="pokazEkranGlowny()" class="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 mb-6 transition-colors cursor-pointer">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Powrót do menu głównego
+        </button>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 anim-fade-in">
+            <div class="flex items-center gap-4 border-b border-gray-100 pb-4 mb-6">
+                <div id="kat-icon-box" class="w-12 h-12 rounded-xl flex items-center justify-center text-white"></div>
+                <div>
+                    <h2 id="kat-title" class="text-2xl font-bold text-gray-800"></h2>
+                    <p class="text-xs text-gray-400">Dedykowany panel wyszukiwania i analizy cen konkurencji</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Filtruj konkurencję:</label>
+                    <div id="sklepy-lista" class="flex flex-wrap gap-2"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Data analizy gazetki / oferty:</label>
+                    <input type="date" id="data-analizy" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Wpisz produkt lub cechę (AI dopasuje synonimy):</label>
+                <div class="border border-gray-200 rounded-xl p-2 bg-gray-50/50">
+                    <script async src="https://cse.google.com/cse.js?cx=1cdcf117b9b234479"></script>
+                    <div class="gcse-search"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 anim-fade-in">
+            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <i data-lucide="calculator" class="w-4 h-4 text-blue-600"></i> Symulator Ceny w Lidlu
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Najniższa znaleziona cena (zł)</label>
+                    <input type="number" id="min-price" class="w-full rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="0.00" oninput="obliczCene()">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Poziom niedowartościowania (%)</label>
+                    <input type="number" id="discount-percent" value="5" class="w-full rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="obliczCene()">
+                </div>
+                <div class="bg-[#002f6c]/5 p-4 rounded-xl border border-[#002f6c]/10 text-center">
+                    <span class="block text-xs text-blue-900 font-medium uppercase tracking-tight">Sugerowana cena półkowa:</span>
+                    <span id="target-price" class="text-2xl font-black text-[#002f6c]">0.00 zł</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center text-xs text-gray-400 my-12">
+        Narzędzie wewnętrzne przygotowane w ramach programu stażowego. Integracja z silnikiem wyszukiwania Google Programmable Search.
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
