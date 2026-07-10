@@ -1,0 +1,51 @@
+/* Czyszczenie i integracja wizualna Google Search widget */
+.gsc-control-cse { 
+    font-family: ui-sans-serif, system-ui, sans-serif !important; 
+    border: none !important; 
+    padding: 0 !important; 
+    background-color: transparent !important; 
+}
+.gsc-search-button-v2 { display: none !important; }
+.gsc-input-box { border-radius: 0.5rem !important; border: 1px solid #e5e7eb !important; padding: 4px !important; }
+.gsc-webResult { background-color: white !important; border: 1px solid #f3f4f6 !important; padding: 12px !important; margin-bottom: 8px !important; border-radius: 0.5rem !important; }
+
+/* Styl dla aktywnego odnośnika w menu górnym */
+.nav-link-active {
+    background-color: rgba(238, 224, 0, 0.15) !important;
+    color: #eee000 !important;
+}
+
+/* --- SYSTEM ANIMACJI (FADE IN UP) --- */
+
+/* Animacja tekstu powitalnego */
+.anim-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Klasa bazowa dla kafelków */
+.kafel {
+    opacity: 0;
+    transform: translateY(35px);
+    animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Opóźnienia kaskadowe dla kafelków menu głównego */
+.del-1 { animation-delay: 0.05s; }
+.del-2 { animation-delay: 0.18s; }
+.del-3 { animation-delay: 0.31s; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(35px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
