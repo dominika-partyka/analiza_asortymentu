@@ -10,15 +10,17 @@
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans pt-16">
 
-    <!-- PASEK NAWIGACYJNY -->
-    <nav class="bg-[#002f6c] text-white shadow-md px-6 py-3 fixed top-0 left-0 right-0 z-50">
+<!-- PASEK NAWIGACYJNY Z LOGO -->
+    <nav class="bg-[#002f6c] text-white shadow-md px-6 py-2 fixed top-0 left-0 right-0 z-50">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             
-            <button onclick="pokazEkranGlowny()" class="flex items-center gap-2 text-lg font-bold tracking-wide hover:opacity-90 transition-all cursor-pointer group">
-                <span class="bg-[#eee000] text-[#002f6c] px-2 py-0.5 rounded font-black text-sm">LIDL</span>
-                <div class="flex items-center gap-1.5 text-gray-100 group-hover:text-white">
+            <button onclick="pokazEkranGlowny()" class="flex items-center gap-3 hover:opacity-90 transition-all cursor-pointer group">
+                <!-- LOGO LIDL Z PLIKU PNG -->
+                <img src="Lidl_logo.png" alt="Lidl Logo" class="h-9 w-9 rounded-md object-contain shadow-sm">
+                
+                <div class="flex items-center gap-1.5 text-gray-100 group-hover:text-white font-medium text-sm md:text-base">
                     <i data-lucide="trending-up" class="w-5 h-5 text-yellow-400"></i>
-                    <span>Panel Analityczny</span>
+                    <span class="font-bold tracking-wide">Panel Analityczny</span>
                 </div>
             </button>
 
