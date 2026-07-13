@@ -249,36 +249,38 @@ function eksportujDoXLSX() {
         return;
     }
     
-    let naglowki = ["Nazwa artykułu"];
+    // 1. Budujemy tabelę w formacie HTML, który Google Sheets idealnie potrafi parsować
+    let html = `<table border="1"><thead><tr><th>Nazwa artykułu</th>`;
     aktywneSklepy.forEach(sklep => {
-        naglowki.push(`Cena ${sklep}`);
-        naglowki.push(`Link ${sklep}`);
+        html += `<th>Cena ${sklep}</th><th>Link ${sklep}</th>`;
     });
-    
-    let daneArkusza = [naglowki];
+    html += `</tr></thead><tbody>`;
     
     KOSZYK_RAPORTU.forEach(item => {
-        let wiersz = [item.nazwaWyszukiwana];
-        
+        html += `<tr><td>${item.nazwaWyszukiwana}</td>`;
         aktywneSklepy.forEach(sklep => {
             const daneSklepu = item.ofertySklepowe[sklep];
             if (daneSklepu) {
-                wiersz.push(daneSklepu.cena); 
-                wiersz.push(daneSklepu.link);
+                // Formatujemy cenę z przecinkiem, żeby Arkusze Google od razu widziały w tym liczbę/walutę
+                const cenaFormatowana = daneSklepu.cena.toFixed(2).replace('.', ',');
+                html += `<td>${cenaFormatowana}</td><td>${daneSklepu.link}</td>`;
             } else {
-                wiersz.push(""); 
-                wiersz.push("");
+                html += `<td></td><td></td>`;
             }
         });
-        
-        daneArkusza.push(wiersz);
+        html += `</tr>`;
     });
+    html += `</tbody></table>`;
     
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(daneArkusza);
+    // 2. Automatycznie kopiujemy wygenerowaną tabelę do schowka systemowego użytkownika
+    const blobHtml = new Blob([html], { type: 'text/html' });
+    const data = [new ClipboardItem({ 'text/html': blobHtml })];
     
-    XLSX.utils.book_append_sheet(wb, ws, "Raport Cenowy");
-    
-    const dataAnalizy = document.getElementById('data-analizy').value;
-    XLSX.writeFile(wb, `Raport_Cenowy_${dataAnalizy}.xlsx`);
+    navigator.clipboard.write(data).then(() => {
+        // 3. Po udanym skopiowaniu, od razu otwieramy nową, czystą kartę Arkuszy Google
+        // Skrót "sheets.new" to oficjalny skrót Google, który tworzy nowy, pusty arkusz na Twoim koncie
+        window.open('https://sheets.new', '_blank');
+    }).catch(err => {
+        alert("Błąd kopiowania danych do schowka: " + err);
+    });
 }
