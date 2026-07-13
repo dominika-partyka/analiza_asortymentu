@@ -1,9 +1,6 @@
 // ==========================================
-// 1. CONFIGURATION AND GLOBAL VARIABLES
+// 1. KONFIGURACJA I ZMIENNE GLOBALNE
 // ==========================================
-const GOOGLE_API_KEY = "AIzaSyD...[TWOJ_KLUCZ_API]"; // Put your actual API key here
-const GOOGLE_CX = "5393052c79d0c4c4a";
-
 const SKLEP_DOMENY = {
     "Biedronka": "biedronka.pl",
     "Aldi": "aldi.pl",
@@ -25,46 +22,44 @@ if (typeof window.listaRaportu === 'undefined') {
 }
 
 // ==========================================
-// 2. CORE INITIALIZATION & MENU NAVIGATION
+// 2. INICJALIZACJA I OBSŁUGA NAWIGACJI MENU
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Initialise Lucide Icons safely
+    // Włączenie ikon na starcie
     RenderujIkony();
 
-    // 2. Setup dates and filters
+    // Konfiguracja daty i filtrów
     InicjalizujObslugeFiltrow();
     UstawDzisiejszaDate();
     
-    // 3. NAVIGATION: Fixes the unclickable "Back to School" tile
+    // NAWIGACJA: Naprawa kafelków menu (np. Back to School)
     const kafelkiMenu = document.querySelectorAll('[data-kategoria]');
     const sekcjaMenu = document.getElementById('main-menu') || document.querySelector('.grid');
-    const sekcjaPanelu = document.getElementById('panel-analityczny') || document.body.firstElementChild; 
-    const btnPowrot = document.getElementById('btn-powrot') || document.querySelector('header button') || document.querySelector('button');
+    const sekcjaPanelu = document.getElementById('panel-analityczny');
+    const btnPowrot = document.getElementById('btn-powrot');
 
-    // Dynamic switching between home menu and the tool panel
     kafelkiMenu.forEach(kafelek => {
         kafelek.addEventListener('click', () => {
             const kat = kafelek.getAttribute('data-kategoria') || "Back to School";
             aktywnaKategoria = kat;
             
-            // Show panel, hide main grid
-            if(sekcjaMenu) sekcjaMenu.classList.add('hidden');
-            if(sekcjaPanelu) sekcjaPanelu.classList.remove('hidden');
+            if (sekcjaMenu) sekcjaMenu.classList.add('hidden');
+            if (sekcjaPanelu) sekcjaPanelu.classList.remove('hidden');
             
-            const naglowekKat = document.getElementById('nazwa-aktywnej-kategorii') || document.querySelector('h1');
+            const naglowekKat = document.getElementById('nazwa-aktywnej-kategorii');
             if (naglowekKat) naglowekKat.innerText = kat;
         });
     });
 
     if (btnPowrot) {
         btnPowrot.addEventListener('click', () => {
-            if(sekcjaPanelu) sekcjaPanelu.classList.add('hidden');
-            if(sekcjaMenu) sekcjaMenu.classList.remove('hidden');
+            if (sekcjaPanelu) sekcjaPanelu.classList.add('hidden');
+            if (sekcjaMenu) sekcjaMenu.classList.remove('hidden');
         });
     }
     
-    // 4. SEARCH TRIGGER LINKS
-    const btnSzukaj = document.getElementById('search-button') || document.querySelector('.bg-blue-900') || document.querySelector('button[onclick*="szukaj"]');
+    // Podpięcie wyszukiwania
+    const btnSzukaj = document.getElementById('search-button');
     if (btnSzukaj) {
         btnSzukaj.addEventListener('click', szukajImplementacja);
     }
@@ -81,13 +76,12 @@ function RenderujIkony() {
     if (window.lucide) {
         window.lucide.createIcons();
     } else {
-        // Fallback injection if CDN is loading slow
-        setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 1000);
+        setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 800);
     }
 }
 
 // ==========================================
-// 3. INTERFACE COMPLEMENTS
+// 3. FUNKCJE INTERFEJSU
 // ==========================================
 function UstawDzisiejszaDate() {
     const inputData = document.getElementById('data-analizy');
@@ -122,17 +116,10 @@ function InicjalizujObslugeFiltrow() {
     });
 }
 
-function znajdzCeneWOpisie(tekst) {
-    if (!tekst) return "";
-    const regex = /(\d+[\.,]\d{2}|\d+)\s*(?:zł|zl|pln)/i;
-    const match = tekst.match(regex);
-    return match ? match[1].replace(',', '.') : "";
-}
-
 // ==========================================
-// 4. HYBRID ENGINE (AUTO API + MANUAL OVERRIDE)
+// 4. CZYSTY SILNIK WERYFIKACJI (BEZ GOOGLE API)
 // ==========================================
-async function szukajImplementacja() {
+function szukajImplementacja() {
     const queryInput = document.getElementById('search-input');
     if (!queryInput) return;
     
@@ -146,41 +133,16 @@ async function szukajImplementacja() {
     }
 
     wynikiBox.classList.remove('hidden');
-    tabelaWynikow.innerHTML = `
-        <tr>
-            <td colspan="5" class="p-6 text-center text-sm text-gray-500 font-medium">
-                <span class="inline-block animate-spin mr-2">⏳</span> Pobieram dane i przygotowuję arkusz weryfikacji...
-            </td>
-        </tr>
-    `;
-
-    let googleItems = [];
-    try {
-        const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data.items) googleItems = data.items;
-    } catch (e) {
-        console.log("Google API status override.");
-    }
-
     tabelaWynikow.innerHTML = '';
+
     const ostateczneSklepy = wybraneSklepyFiltru.length > 0 ? wybraneSklepyFiltru : aktywneSklepy;
 
     ostateczneSklepy.forEach((sklep, index) => {
         const domena = SKLEP_DOMENY[sklep] || "google.com";
-        let znalezionyOpis = "Brak automatycznego dopasowania. Kliknij 'Otwórz sklep' i wprowadź cenę ręcznie.";
-        let automatycznaCena = "";
-
-        const dopasowanyWynik = googleItems.find(item => item.link.toLowerCase().includes(domena.toLowerCase()));
-        if (dopasowanyWynik) {
-            znalezionyOpis = dopasowanyWynik.title + " - " + (dopasowanyWynik.snippet || "");
-            automatycznaCena = znajdzCeneWOpisie(dopasowanyWynik.snippet || "");
-        }
-
-        let linkWeryfikacyjny = `https://${domena}`;
         const encodedQuery = encodeURIComponent(query);
 
+        // Generowanie inteligentnych linków weryfikacyjnych prosto do wyszukiwarek sklepów
+        let linkWeryfikacyjny = `https://${domena}`;
         if (domena.includes('biedronka.pl')) linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodedQuery}`;
         else if (domena.includes('action.com')) linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodedQuery}`;
         else if (domena.includes('aldi.pl')) linkWeryfikacyjny = `https://www.aldi.pl/wyszukiwanie.html?q=${encodedQuery}`;
@@ -196,11 +158,11 @@ async function szukajImplementacja() {
             <td class="p-3 font-bold text-gray-700">${sklep}</td>
             <td class="p-3">
                 <div class="font-semibold text-gray-900">${query}</div>
-                <div class="text-xs text-gray-400 max-w-md truncate">${znalezionyOpis}</div>
+                <div class="text-xs text-gray-400 max-w-md truncate">Kliknij 'Otwórz sklep', aby sprawdzić realną cenę na stronie.</div>
             </td>
             <td class="p-3 text-right">
                 <div class="inline-flex items-center gap-1">
-                    <input type="number" id="${uniqueId}" step="0.01" min="0" value="${automatycznaCena}" placeholder="0.00" 
+                    <input type="number" id="${uniqueId}" step="0.01" min="0" placeholder="0.00" 
                            class="w-20 bg-white border border-gray-300 rounded-lg p-1.5 text-sm font-bold text-right text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <span class="text-xs font-bold text-gray-500">zł</span>
                 </div>
@@ -224,7 +186,7 @@ async function szukajImplementacja() {
 }
 
 // ==========================================
-// 5. REPORT GENERATION & EXCEL EXPORT
+// 5. RAPORTOWANIE I EKSPORT EXCEL
 // ==========================================
 function ZatwierdzPozycje(sklep, inputId) {
     const query = document.getElementById('search-input').value.trim();
@@ -232,7 +194,7 @@ function ZatwierdzPozycje(sklep, inputId) {
     const cenaWpisana = parseFloat(cenaInput.value);
 
     if (isNaN(cenaWpisana) || cenaWpisana <= 0) {
-        alert('Wpisz poprawną cenę przed dodaniem do raportu!');
+        alert('Wpisz poprawną, sprawdzoną cenę przed dodaniem do raportu!');
         return;
     }
 
@@ -274,7 +236,7 @@ function WstrzyknijDoTabeliRaportu(sklep, produkt, cena) {
 
 function eksportujDoExcel() {
     if (window.listaRaportu.length === 0) {
-        alert("Raport jest pusty!");
+        alert("Raport jest pusty! Dodaj najpierw ceny.");
         return;
     }
 
@@ -295,7 +257,7 @@ function eksportujDoExcel() {
     const inputData = document.getElementById('data-analizy');
     const dataPliku = inputData ? inputData.value : "raport";
     
-    XLSX.writeFile(workbook, `Raport_Cenowy_Konkurencja_${dataPliku}.xlsx`);
+    XLSX.writeFile(workbook, `Raport_Cenowy_${dataPliku}.xlsx`);
 }
 
 window.ZatwierdzPozycje = ZatwierdzPozycje;
