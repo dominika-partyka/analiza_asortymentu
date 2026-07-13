@@ -14,7 +14,7 @@ const SKLEP_DOMENY = {
 };
 
 const SKLEPY_KATEGORII = {
-    "Książki": ["Empik", "Tania Książka", "Tantis", "Smyk"],
+    "Książki": ["Empik", "Tania Książka", "Tantis"], // CAŁKOWICIE USUNIĘTO: Smyk
     "Back to School": ["Biedronka", "Aldi", "Sinsay", "Action"],
     "Zabawki": ["Smyk", "Allegro", "Empik"]
 };
@@ -133,8 +133,9 @@ function PobierzZaznaczoneSklepy() {
     });
     return zaznaczone.length > 0 ? zaznaczone : aktywneSklepyKategorii;
 }
+
 // ==========================================
-// 4. PERFEKCYJNIE DOPASOWANA WYSZUKIWARKA (SMYK I TANTIS 1:1 BEZ PROCENTÓW)
+// 4. PERFEKCYJNIE DOPASOWANA WYSZUKIWARKA (BEZ SMYKA W KSIĄŻKACH)
 // ==========================================
 function szukajImplementacja() {
     const tytulInput = document.getElementById('search-title');
@@ -177,7 +178,6 @@ function szukajImplementacja() {
         const encodedQuery = encodeURIComponent(queryStr);
         const queryWithPluses = encodeURIComponent(queryStr).replace(/%20/g, '+'); 
 
-        // UNIWERSALNA KONWERSJA NA PRZYJAZNY ADRES (Wymuszone małe litery, myślniki zamiast spacji, brak polskich ogonków)
         const queryCleanSlug = queryStr.toLowerCase()
             .replace(/ /g, '-')
             .replace(/[ąąáâãäå]/g, 'a')
@@ -214,7 +214,6 @@ function szukajImplementacja() {
             linkWeryfikacyjny = `https://tantis.pl/szukaj/${queryCleanSlug}`;
         }
         else if (domena.includes('smyk.com')) {
-            // ODWZOROWANIE 1:1 DLA SMYKA - Przekierowanie na przyjazną strukturę katalogu "/pl/pl/p/nazwa-produktu" bez procentów
             linkWeryfikacyjny = `https://www.smyk.com/pl/pl/p/${queryCleanSlug}`;
         }
 
@@ -273,13 +272,12 @@ function szukajImplementacja() {
 }
 
 // ==========================================
-// 5. OBSŁUGA POZIOMEGO RAPORTU (START OD KOLUMNY ARTYKUŁ)
+// 5. OBSŁUGA POZIOMEGO RAPORTU
 // ==========================================
 function InicjalizujNaglowkiRaportu() {
     const naglowek = document.getElementById('naglowek-tabeli-raportu');
     if (!naglowek) return;
 
-    // USUNIĘTO KOLUMNĘ DATA ORAZ KATEGORIA - Zaczynamy od Artykułu
     let html = `<th class="p-2.5">Artykuł / Produkt</th>`;
     
     aktywneSklepyKategorii.forEach(sklep => {
@@ -288,7 +286,7 @@ function InicjalizujNaglowkiRaportu() {
 
     html += `
         <th class="p-2.5 text-center border-l border-gray-200">Linki weryfikacyjne</th>
-        <th class="p-2.5 text-center">Akcja</th>
+        <th class="p-2.5 text-center">Action</th>
     `;
     naglowek.innerHTML = html;
 }
@@ -351,7 +349,6 @@ function OdswiezWidokTabeliRaportu() {
         const row = document.createElement('tr');
         row.className = "border-b border-gray-100 hover:bg-gray-50/50 transition-colors";
 
-        // Pierwsza kolumna to bezpośrednio pogrubiony tytuł przedmiotu
         let rowHtml = `<td class="p-2.5 font-bold text-gray-900 max-w-sm truncate" title="${item.produkt}">${item.produkt}</td>`;
 
         aktywneSklepyKategorii.forEach(sklep => {
@@ -400,7 +397,7 @@ function UsunZRaportuZIndeksu(indeks) {
 }
 
 // ==========================================
-// 6. MACIERZOWE GENEROWANIE PLIKÓW XLSX (ZMODYFIKOWANE)
+// 6. MACIERZOWE GENEROWANIE PLIKÓW XLSX
 // ==========================================
 function eksportujDoXLSX() {
     if (window.listaRaportu.length === 0) {
@@ -408,7 +405,6 @@ function eksportujDoXLSX() {
         return;
     }
 
-    // Pierwsza kolumna w schowku TSV to od teraz również wyłącznie nazwa przedmiotu
     let tsvNaglowek = ["Artykuł / Produkt"];
     aktywneSklepyKategorii.forEach(sklep => tsvNaglowek.push(sklep));
     aktywneSklepyKategorii.forEach(sklep => tsvNaglowek.push(`Link ${sklep}`));
@@ -436,7 +432,7 @@ function eksportujDoXLSX() {
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Zestawienie Cenowe");
 
-        let colsSpec = [{wch: 40}]; // Szeroka pierwsza kolumna na nazwę przedmiotu
+        let colsSpec = [{wch: 40}]; 
         aktywneSklepyKategorii.forEach(() => colsSpec.push({wch: 14}));
         aktywneSklepyKategorii.forEach(() => colsSpec.push({wch: 20}));
         worksheet['!cols'] = colsSpec;
