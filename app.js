@@ -6,7 +6,7 @@ function wybierzKategorie(nazwa, ikona, sklepy) {
     document.getElementById('ekran-glowny').classList.add('hidden');
     document.getElementById('ekran-kategorii').classList.remove('hidden');
     
-    // Ukrywamy boks z wynikami przy zmianie kategorii
+    // Ukrywamy stare wyniki wyszukiwania
     document.getElementById('google-results-box').classList.add('hidden');
     
     document.getElementById('kat-title').innerText = nazwa;
@@ -21,11 +21,14 @@ function wybierzKategorie(nazwa, ikona, sklepy) {
     if(nazwa === 'Back to School') iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center text-white bg-yellow-500";
     if(nazwa === 'Zabawki') iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center text-white bg-pink-500";
     
-    const focusGrupa = document.getElementById('focus-grupa');
-    if(nazwa === 'Książki') focusGrupa.innerText = "KULTURA I ROZRYWKA / KSIĄŻKI";
-    if(nazwa === 'Back to School') focusGrupa.innerText = "ART. PAPIERNICZE / SZKOLNE";
-    if(nazwa === 'Zabawki') focusGrupa.innerText = "ZABAWKI I GRY SEZONOWE";
+    // USTAWIANIE DOMYŚLNEJ DZISIEJSZEJ DATY
+    const dzis = new Date();
+    const rok = dzis.getFullYear();
+    const miesiac = String(dzis.getMonth() + 1).padStart(2, '0');
+    const dzien = String(dzis.getDate()).padStart(2, '0');
+    document.getElementById('data-analizy').value = `${rok}-${miesiac}-${dzien}`;
 
+    // Generowanie nowych checkboxów dla sklepów
     const sklepyLista = document.getElementById('sklepy-lista');
     sklepyLista.innerHTML = '';
     sklepy.forEach(sklep => {
@@ -50,7 +53,7 @@ function pokazEkranGlowny() {
     document.getElementById('current-category-badge').classList.add('hidden');
 }
 
-// NOWA FUNKCJA - WYSZUKUJE BEZPOŚREDNIO WEWNĄTRZ PANELU
+// WYSZUKIWANIE WEWNĘTRZNE W PANELU
 function uruchomWyszukiwanieWewnetrzne() {
     const produkt = document.getElementById('search-input').value.trim();
     
@@ -59,53 +62,55 @@ function uruchomWyszukiwanieWewnetrzne() {
         return;
     }
     
-    // Pobieramy zaznaczone przez Ciebie checkboxy ze sklepami
     const checkboxy = document.querySelectorAll('#sklepy-lista input:checked');
     let wybraneSklepy = [];
     checkboxy.forEach(cb => {
         wybraneSklepy.push(cb.nextElementSibling.innerText);
     });
     
-    // Budujemy zapytanie z operatorami "site:" dla Google CSE
     let query = produkt;
     if (wybraneSklepy.length > 0) {
-        query += " (";
-        const siteQueries = wybraneSklepy.map(sklep => {
-            if(sklep.toLowerCase() === 'biedronka') return 'site:biedronka.pl';
-            if(sklep.toLowerCase() === 'aldi') return 'site:aldi.pl';
-            if(sklep.toLowerCase() === 'sinsay') return 'site:sinsay.com';
-            if(sklep.toLowerCase() === 'action') return 'site:action.com';
-            if(sklep.toLowerCase() === 'empik') return 'site:empik.com';
-            if(sklep.toLowerCase() === 'tania książka') return 'site:taniaksiazka.pl';
-            if(sklep.toLowerCase() === 'świat książki') return 'site:swiatksiazki.pl';
-            if(sklep.toLowerCase() === 'smyk') return 'site:smyk.com';
-            if(sklep.toLowerCase() === 'allegro') return 'site:allegro.pl';
-            return `intitle:${sklep}`;
-        });
-        query += siteQueries.join(" OR ") + ")";
+        const sklepyQuery = wybraneSklepy.map(s => s.toLowerCase()).join(" OR ");
+        query += ` (${sklepyQuery})`;
     }
     
-    // Pokazujemy boks z wynikami i czyścimy jego starą zawartość
     const resultsBox = document.getElementById('google-results-box');
     const insideResults = document.getElementById('inside-results');
     resultsBox.classList.remove('hidden');
-    insideResults.innerHTML = '<p class="text-sm text-gray-400 animate-pulse">Trwa przeszukiwanie asortymentu konkurencji...</p>';
     
-    // Magiczny skrypt Google CSE: wstrzykujemy wyniki do naszego diva zamiast nowej karty
-    google.search.cse.element.render({
-        div: 'inside-results',
-        tag: 'searchresults-only',
-        attributes: {
-            gname: 'lidl-search'
+    insideResults.innerHTML = `
+        <div class="flex flex-col items-center gap-3 p-4">
+            <p class="text-sm text-gray-500 animate-pulse">🔎 Przeszukuję bazy konkurencji (Biedronka, Aldi, Action, Sinsay)... to zajmie tylko chwilę.</p>
+            <button onclick="zatrzymajWyszukiwanie()" class="bg-red-600 text-white px-4 py-1.5 rounded-lg font-bold text-xs hover:bg-red-700 transition-colors cursor-pointer flex items-center gap-1 shadow-sm">
+                <i data-lucide="square" class="w-3.5 h-3.5"></i> Anuluj wyszukiwanie
+            </button>
+        </div>
+    `;
+    lucide.createIcons();
+    
+    if (typeof google !== 'undefined' && google.search && google.search.cse) {
+        google.search.cse.element.render({
+            div: 'inside-results',
+            tag: 'searchresults-only',
+            attributes: { gname: 'lidl-search' }
+        });
+        
+        const element = google.search.cse.element.getElement('lidl-search');
+        if (element) {
+            element.execute(query);
+        } else {
+            insideResults.innerHTML = '<p class="text-sm text-red-500">Błąd wyszukiwarki. Odśwież stronę (F5).</p>';
         }
-    });
-    
-    // Wykonujemy wyszukiwanie za pomocą oficjalnego API Google komponentu
-    const element = google.search.cse.element.getElement('lidl-search');
-    element.execute(query);
+    } else {
+        insideResults.innerHTML = '<p class="text-sm text-amber-600">Skrypt się ładuje. Poczekaj sekundę i kliknij ponownie.</p>';
+    }
 }
 
-// Funkcja kalkulatora cenowego
+function zatrzymajWyszukiwanie() {
+    document.getElementById('google-results-box').classList.add('hidden');
+    document.getElementById('inside-results').innerHTML = ''; 
+}
+
 function obliczCene() {
     const minPrice = parseFloat(document.getElementById('min-price').value);
     const discountPercent = parseFloat(document.getElementById('discount-percent').value);
