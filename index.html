@@ -3,189 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lidl - Panel Analizy Cenowej Konkurencji</title>
-    <!-- Bootstrap 5 CSS dla nowoczesnego wyglądu -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts & FontAwesome dla ikon -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f4f6f9;
-            color: #333;
-        }
-        .navbar-lidl {
-            background-color: #0050aa;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .navbar-brand img {
-            height: 45px;
-            margin-right: 15px;
-        }
-        .tile {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            border: 2px solid transparent;
-        }
-        .tile:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        }
-        .tile.active {
-            border-color: #0050aa;
-            background-color: #e6f0fa;
-        }
-        .tile-icon {
-            font-size: 2.5rem;
-            color: #0050aa;
-            margin-bottom: 12px;
-        }
-        .search-container {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 30px;
-        }
-        .results-container {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        .table img {
-            max-width: 60px;
-            max-height: 60px;
-            border-radius: 6px;
-            object-fit: cover;
-        }
-        .badge-shop {
-            background-color: #f0f2f5;
-            color: #4e5d78;
-            font-weight: 600;
-        }
-    </style>
+    <title>Lidl Analiza Konkurencji - Panel Asystenta</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Biblioteka SheetJS do bezpośredniego generowania plików XLSX (Excel) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-900 min-h-screen font-sans pt-16">
 
-    <!-- Pasek Nawigacji -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-lidl py-2">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center fw-bold text-white" href="#">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Lidl-Logo.svg" alt="Lidl Logo">
-                PANEL MONITOROWANIA CEN KONKURENCJI
-            </a>
-            <span class="navbar-text text-white-50 small d-none d-md-inline">
-                <i class="fa-solid fa-circle-check text-success me-1"></i> Połączono z Google API
-            </span>
+    <!-- PASEK NAWIGACYJNY -->
+    <nav class="bg-[#002f6c] text-white shadow-md px-6 py-2 fixed top-0 left-0 right-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            
+            <button onclick="pokazEkranGlowny()" class="flex items-center gap-3 hover:opacity-90 transition-all cursor-pointer bg-transparent border-0 text-left p-0">
+                <img src="Lidl_logo.png" alt="Lidl Logo" class="h-9 w-9 rounded-md object-contain shadow-sm">
+                <div class="flex items-center gap-1.5 text-gray-100 group-hover:text-white font-medium text-sm md:text-base">
+                    <i data-lucide="trending-up" class="w-5 h-5 text-yellow-400"></i>
+                    <span class="font-bold tracking-wide">Panel Analityczny</span>
+                </div>
+            </button>
+
+            <div class="flex items-center gap-1 md:gap-4 text-sm font-medium">
+                <button onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki'])" 
+                        class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0 text-white">
+                    <i data-lucide="book-open" class="w-4 h-4 text-blue-300"></i> <span class="hidden sm:inline">Książki</span>
+                </button>
+                <button onclick="wybierzKategorie('Back to School', 'graduation-cap', ['Biedronka', 'Aldi', 'Sinsay', 'Action'])" 
+                        class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0 text-white">
+                    <i data-lucide="graduation-cap" class="w-4 h-4 text-yellow-300"></i> <span class="hidden sm:inline">Back to School</span>
+                </button>
+                <button onclick="wybierzKategorie('Zabawki', 'dribbble', ['Smyk', 'Allegro', 'Empik'])" 
+                        class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0 text-white">
+                    <i data-lucide="dribbble" class="w-4 h-4 text-pink-300"></i> <span class="hidden sm:inline">Zabawki</span>
+                </button>
+                <div class="h-5 w-px bg-blue-800 mx-1 hidden sm:block"></div>
+                <span id="current-category-badge" class="hidden text-xs bg-yellow-400 text-blue-950 px-2.5 py-1 rounded-md font-bold"></span>
+            </div>
+
         </div>
     </nav>
 
-    <div class="container my-5">
-        
-        <!-- Sekcja Kafelków / Kategorii -->
-        <h5 class="fw-bold mb-3 text-uppercase text-muted small">1. Wybierz obszar analizy</h5>
-        <div class="row g-4 mb-5">
-            <div class="col-6 col-md-3">
-                <div class="tile active" id="tile-school" onclick="setCategory('school', this)">
-                    <div class="tile-icon"><i class="fa-solid fa-graduation-cap"></i></div>
-                    <h5 class="fw-bold m-0">Back to School</h5>
-                    <small class="text-muted">Biedronka, Aldi, Action...</small>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="tile" id="tile-books" onclick="setCategory('books', this)">
-                    <div class="tile-icon"><i class="fa-solid fa-book"></i></div>
-                    <h5 class="fw-bold m-0">Książki</h5>
-                    <small class="text-muted">Empik, TanieKsiążka, Tantis</small>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="tile" id="tile-clothes" onclick="setCategory('clothes', this)">
-                    <div class="tile-icon"><i class="fa-solid fa-shirt"></i></div>
-                    <h5 class="fw-bold m-0">Tekstylia & Odzież</h5>
-                    <small class="text-muted">Sinsay, Smyk</small>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="tile" id="tile-toys" onclick="setCategory('toys', this)">
-                    <div class="tile-icon"><i class="fa-solid fa-gamepad"></i></div>
-                    <h5 class="fw-bold m-0">Zabawki & Gierki</h5>
-                    <small class="text-muted">Smyk, Action, Empik</small>
-                </div>
-            </div>
+    <!-- EKRAN GŁÓWNY -->
+    <div id="ekran-glowny" class="max-w-5xl mx-auto px-6 py-12">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-black text-gray-800 tracking-tight">Cześć! Co dzisiaj analizujemy?</h2>
+            <p class="text-gray-500 mt-2 text-lg">Wybierz kategorię asortymentu z kafelków poniżej lub z paska nawigacji.</p>
         </div>
 
-        <!-- Sekcja Wyszukiwania i Filtrów -->
-        <div class="search-container">
-            <h5 class="fw-bold mb-3 text-uppercase text-muted small">2. Parametry wyszukiwania</h5>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="input-group input-group-lg">
-                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
-                        <input type="text" id="productSearch" class="form-control border-start-0 fs-6" placeholder="Wpisz nazwę szukanego artykułu (np. zeszyt A4, klocki lego)..." onkeypress="if(event.key === 'Enter') searchProduct()">
-                    </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki'])" 
+                 class="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
+                <div class="w-16 h-16 bg-blue-50 text-[#002f6c] rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <i data-lucide="book-open" class="w-8 h-8"></i>
                 </div>
-                <div class="col-6 col-md-3">
-                    <select id="sortFilter" class="form-select form-select-lg fs-6" onchange="applyFiltersAndSort()">
-                        <option value="default">Domyślne sortowanie</option>
-                        <option value="name-asc">Nazwa: A do Z</option>
-                        <option value="shop-asc">Sklep: Alfabetycznie</option>
-                    </select>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Książki</h3>
+                <p class="text-gray-500 text-sm">Wyszukiwanie w księgarniach internetowych.</p>
+            </div>
+
+            <div onclick="wybierzKategorie('Back to School', 'graduation-cap', ['Biedronka', 'Aldi', 'Sinsay', 'Action'])" 
+                 class="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
+                <div class="w-16 h-16 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-yellow-500 group-hover:text-white transition-colors">
+                    <i data-lucide="graduation-cap" class="w-8 h-8"></i>
                 </div>
-                <div class="col-6 col-md-3">
-                    <button class="btn btn-primary btn-lg w-100 fw-bold" onclick="searchProduct()" style="background-color: #0050aa; border: none;">
-                        <i class="fa-solid fa-bolt me-2"></i>SKANUJ CENY
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Back to School</h3>
+                <p class="text-gray-500 text-sm">Analiza sezonowych artykułów szkolnych i odzieży.</p>
+            </div>
+
+            <div onclick="wybierzKategorie('Zabawki', 'dribbble', ['Smyk', 'Allegro', 'Empik'])" 
+                 class="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
+                <div class="w-16 h-16 bg-pink-50 text-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-pink-500 group-hover:text-white transition-colors">
+                    <i data-lucide="dribbble" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Zabawki</h3>
+                <p class="text-gray-500 text-sm">Porównywanie cen zabawek u kluczowych dystrybutorów.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- EKRAN SZCZEGÓŁÓW KATEGORII -->
+    <div id="ekran-kategorii" class="hidden max-w-4xl mx-auto px-6 py-10">
+        <button onclick="pokazEkranGlowny()" class="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 mb-6 transition-colors cursor-pointer bg-transparent border-0">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Powrót do menu głównego
+        </button>
+
+        <!-- PANEL FILTRÓW I WYSZUKIWARKI -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <div class="flex items-center gap-4 border-b border-gray-100 pb-4 mb-6">
+                <div id="kat-icon-box" class="w-12 h-12 rounded-xl flex items-center justify-center text-white"></div>
+                <div>
+                    <h2 id="kat-title" class="text-2xl font-bold text-gray-800"></h2>
+                    <p class="text-xs text-gray-400">Błyskawiczne kompletowanie bazy danych do arkusza</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Filtruj konkurencję:</label>
+                    <div id="sklepy-lista" class="flex flex-wrap gap-2"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Data analizy gazetki / oferty:</label>
+                    <input type="date" id="data-analizy" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label for="search-input" class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Wpisz produkt (np. zeszyt, kredki, monopoly):</label>
+                <div class="flex gap-2">
+                    <input type="text" id="search-input" placeholder="Wpisz słowo kluczowe..." 
+                           class="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-inner"
+                           onkeypress="if(event.key === 'Enter') szukajImplementacja()">
+                    <button onclick="szukajImplementacja()" class="bg-[#002f6c] text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-800 transition-colors cursor-pointer flex items-center gap-2 border-0">
+                        <i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i> Wyszukaj produkt
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Sekcja Wyników -->
-        <div class="results-container">
-            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                <div>
-                    <h4 class="fw-bold m-0">Zidentyfikowane oferty konkurencji</h4>
-                    <small class="text-muted" id="resultsCounter">Wyszukaj produkt, aby pobrać aktualne dane rynkowe</small>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="clearResults()"><i class="fa-solid fa-trash-can me-1"></i> Wyczyść</button>
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-hover align-middle m-0">
-                    <thead class="table-light">
+        <!-- TABELA WYNIKÓW WYSZUKIWANIA -->
+        <div id="wyniki-box" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <i data-lucide="search-code" class="w-4 h-4 text-blue-600"></i> Wyniki z rynku (Szybkie wyszukanie):
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-600">
+                    <thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">
                         <tr>
-                            <th scope="col" class="text-center" style="width: 80px;">Zdjęcie</th>
-                            <th scope="col">Szczegóły produktu & Sklep</th>
-                            <th scope="col" class="text-center" style="width: 150px;">Szacowana Cena</th>
-                            <th scope="col" class="text-center" style="width: 150px;">Akcja</th>
+                            <th class="p-3">Sklep</th>
+                            <th class="p-3">Nazwa artykułu</th>
+                            <th class="p-3 text-right">Cena</th>
+                            <th class="p-3 text-center">Oferta</th>
+                            <th class="p-3 text-center">Raport</th>
                         </tr>
                     </thead>
-                    <tbody id="resultsTable">
-                        <tr>
-                            <td colspan="4" class="text-center py-5 text-muted">
-                                <i class="fa-solid fa-arrow-pointer display-6 mb-3 d-block text-black-50"></i>
-                                Wybierz kafel i wpisz słowo kluczowe powyżej, a następnie kliknij "Skanuj ceny".
-                            </td>
+                    <tbody id="tabela-wynikow"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ZBIORCZA LISTA DO EKSPORTU -->
+        <div id="raport-box" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-4 mb-4">
+                <div>
+                    <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="folder-heart" class="w-4 h-4 text-green-600"></i> Twoja lista do eksportu (Google Sheets / Excel)
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Produkty zakwalifikowane do końcowego zestawienia cenowego</p>
+                </div>
+                <button onclick="eksportujDoXLSX()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-emerald-700 transition-all cursor-pointer flex items-center gap-1.5 border-0 shadow-sm">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> Eksportuj do Excel (XLSX)
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-gray-600">
+                    <thead class="bg-gray-100 text-gray-600 uppercase tracking-wider font-bold">
+                        <tr id="naglowek-tabeli-raportu">
+                            <!-- Nagłówki dynamiczne -->
                         </tr>
-                    </tbody>
+                    </thead>
+                    <tbody id="tabela-raportu-body" class="divide-y divide-gray-100"></tbody>
                 </table>
             </div>
         </div>
 
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
-    <!-- Podłączenie zewnętrznego pliku skryptu -->
+    <footer class="text-center text-xs text-gray-400 my-12">
+        Narzędzie wewnętrzne przygotowane w ramach programu stażowego. Moduł XLSX z obsługą pełnego cyklu stanów raportowania.
+    </footer>
+
     <script src="app.js"></script>
 </body>
 </html>
