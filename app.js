@@ -9,13 +9,12 @@ const SKLEP_DOMENY = {
     "Smyk": "smyk.com",
     "Empik": "empik.com",
     "Tania Książka": "taniaksiazka.pl",
-    "Świat Książki": "swiatksiazki.pl",
+    "Tantis": "tantis.pl", // ZAMIANA: Świat Książki -> Tantis
     "Allegro": "allegro.pl"
 };
 
-// Tutaj na sztywno definiujemy sklepy, dzięki czemu zawsze wyświetlą się poprawnie!
 const SKLEPY_KATEGORII = {
-    "Książki": ["Empik", "Tania Książka", "Świat Książki", "Smyk"],
+    "Książki": ["Empik", "Tania Książka", "Tantis", "Smyk"], // Podmieniony na Tantis
     "Back to School": ["Biedronka", "Aldi", "Sinsay", "Action"],
     "Zabawki": ["Smyk", "Allegro", "Empik"]
 };
@@ -28,7 +27,12 @@ const KOLORY_KATEGORII = {
 
 let aktywneSklepyKategorii = [];
 let aktywnaKategoria = "";
-window.listaRaportu = [];
+window.listaRaportu = []; 
+// Struktura obiektów w liście raportu zmieniła się na:
+// { id, data, kategoria, produkt, ceny: { "Sklep1": "12,34 zł", ... }, linki: { "Sklep1": "url", ... } }
+
+// Tymczasowy schowek na linki wygenerowane podczas bieżącego wyszukiwania
+let biezaceLinkiWyszukiwania = {};
 
 // ==========================================
 // 2. INICJALIZACJA I OBSŁUGA STARTOWA
@@ -37,7 +41,6 @@ document.addEventListener("DOMContentLoaded", () => {
     RenderujIkony();
     UstawDzisiejszaDate();
     pokazEkranGlowny();
-    InicjalizujNaglowkiRaportu();
 });
 
 function RenderujIkony() {
@@ -66,11 +69,13 @@ function pokazEkranGlowny() {
     document.getElementById('current-category-badge').classList.add('hidden');
     aktywnaKategoria = "";
     aktywneSklepyKategorii = [];
+    window.listaRaportu = []; // Reset zestawienia przy powrocie do głównego menu
+    document.getElementById('raport-box').classList.add('hidden');
+    document.getElementById('tabela-raportu-body').innerHTML = '';
 }
 
 function wybierzKategorie(nazwaKategorii, ikona) {
     aktywnaKategoria = nazwaKategorii;
-    // Pobieranie sklepów prosto z naszej bezpiecznej mapy JS
     aktywneSklepyKategorii = SKLEPY_KATEGORII[nazwaKategorii] || [];
 
     document.getElementById('ekran-glowny').classList.add('hidden');
@@ -86,12 +91,24 @@ function wybierzKategorie(nazwaKategorii, ikona) {
     iconBox.className = `w-12 h-12 rounded-xl flex items-center justify-center text-white ${KOLORY_KATEGORII[nazwaKategorii] || 'bg-blue-600'}`;
     iconBox.innerHTML = `<i data-lucide="${ikona || 'bookmark'}"></i>`;
 
-    // Czyszczenie pól i tabeli
+    // DYNAMICZNE UKRYWANIE KODU EAN (Tylko dla Książek)
+    const boxEan = document.getElementById('box-ean');
+    if (nazwaKategorii === 'Książki') {
+        boxEan.style.display = 'block';
+    } else {
+        boxEan.style.display = 'none';
+    }
+
+    // Czyszczenie i przygotowanie tabeli raportu
     document.getElementById('wyniki-box').classList.add('hidden');
     document.getElementById('tabela-wynikow').innerHTML = '';
     document.getElementById('search-title').value = '';
     document.getElementById('search-ean').value = '';
-
+    
+    window.listaRaportu = []; 
+    document.getElementById('raport-box').classList.add('hidden');
+    
+    InicjalizujNaglowkiRaportu();
     GenerujCheckboxySklepow(aktywneSklepyKategorii);
     RenderujIkony();
 }
@@ -121,17 +138,23 @@ function PobierzZaznaczoneSklepy() {
 }
 
 // ==========================================
-// 4. DWUPOLOWA WYSZUKIWARKA (TYTUŁ + EAN)
+// 4. INTELIGENTNA WYSZUKIWARKA (NAZWA / EAN)
 // ==========================================
 function szukajImplementacja() {
-    const tytułInput = document.getElementById('search-title');
+    const tytulInput = document.getElementById('search-title');
     const eanInput = document.getElementById('search-ean');
     
-    const tytul = tytułInput ? tytułInput.value.trim() : "";
-    const ean = eanInput ? eanInput.value.trim() : "";
+    const tytul = tytulInput ? tytulInput.value.trim() : "";
+    // Jeśli nie jesteśmy w książkach, ignorujemy wartość EAN
+    const ean = (aktywnaKategoria === 'Książki' && eanInput) ? eanInput.value.trim() : "";
 
-    if (!tytul && !ean) {
-        alert('Wprowadź Tytuł/Nazwę, kod EAN lub oba te parametry!');
+    if (aktywnaKategoria === 'Książki' && !tytul && ean) {
+        alert('Szukanie po samym kodzie EAN jest zablokowane, ponieważ większość wyszukiwarek sklepów go nie obsługuje. Podaj tytuł książki lub tytuł razem z EAN.');
+        return;
+    }
+
+    if (!tytul) {
+        alert('Wprowadź nazwę/tytuł artykułu do wyszukania!');
         return;
     }
 
@@ -140,29 +163,19 @@ function szukajImplementacja() {
 
     wynikiBox.classList.remove('hidden');
     tabelaWynikow.innerHTML = '';
+    biezaceLinkiWyszukiwania = {}; // Wyczyszczenie tymczasowej tablicy linków
 
     const wybraneSklepy = PobierzZaznaczoneSklepy();
 
-    // Definiujemy, co przekazać do wyszukiwarki sklepu
-    let frazaDoWyswietlenia = "";
-    if (tytul && ean) frazaDoWyswietlenia = `${tytul} (EAN: ${ean})`;
-    else if (tytul) frazaDoWyswietlenia = tytul;
-    else frazaDoWyswietlenia = `EAN: ${ean}`;
+    let frazaDoWyswietlenia = tytul;
+    if (ean) frazaDoWyswietlenia += ` (EAN: ${ean})`;
 
     wybraneSklepy.forEach((sklep, index) => {
         const domena = SKLEP_DOMENY[sklep] || "google.com";
         let linkWeryfikacyjny = `https://${domena}`;
 
-        // Budowanie optymalnego zapytania dla danej konfiguracji pól
-        let queryStr = "";
-        if (tytul && ean) {
-            // Sklepy internetowe rzadko radzą sobie z jednoczesnym szukaniem tekstu i kodu w jednym polu.
-            // Strategia: szukamy po EAN, bo jest unikalny, a jeśli sklep go nie trawi, Google załatwi sprawę.
-            queryStr = ean; 
-        } else {
-            queryStr = tytul || ean;
-        }
-
+        // Budowanie frazy wyszukiwania: Tytuł + EAN (jeśli podano) lub sam Tytuł
+        let queryStr = ean ? `${tytul} ${ean}` : tytul;
         const encodedQuery = encodeURIComponent(queryStr);
 
         // Mapowanie linków bezpośrednich
@@ -174,18 +187,12 @@ function szukajImplementacja() {
         else if (domena.includes('allegro.pl')) linkWeryfikacyjny = `https://allegro.pl/listing?string=${encodedQuery}`;
         else if (domena.includes('smyk.com')) linkWeryfikacyjny = `https://www.smyk.com/szukaj/produkt?q=${encodedQuery}`;
         else if (domena.includes('taniaksiazka.pl')) linkWeryfikacyjny = `https://www.taniaksiazka.pl/szukaj/zapytanie-${encodedQuery}`;
-        else if (domena.includes('swiatksiazki.pl')) linkWeryfikacyjny = `https://www.swiatksiazki.pl/catalogsearch/result/?q=${encodedQuery}`;
+        else if (domena.includes('tantis.pl')) linkWeryfikacyjny = `https://tantis.pl/szukaj?q=${encodedQuery}`;
 
-        // Jeśli szukamy po EAN (lub oba) a sklep to np. wspomniany Tantis czy inny wrażliwy system,
-        // Google z parametrem site: uratuje sytuację. Na tym etapie Smyk, Empik czy TaniaKsiążka świetnie łykają czysty EAN.
-        if (ean && !domena.includes('empik.com') && !domena.includes('taniaksiazka.pl') && !domena.includes('swiatksiazki.pl') && !domena.includes('smyk.com') && !domena.includes('allegro.pl')) {
-            linkWeryfikacyjny = `https://www.google.com/search?q=site:${domena}+${encodedQuery}`;
-        }
+        // Zapisujemy link w pamięci podręcznej, aby trafił do ostatecznego wiersza raportu
+        biezaceLinkiWyszukiwania[sklep] = linkWeryfikacyjny;
 
         const uniqueId = `cena-${index}`;
-
-        // Co ma zapisać się jako nazwa produktu w ostatecznym raporcie:
-        const ostatecznaNazwaRaportu = tytul ? tytul : `EAN: ${ean}`;
 
         const row = document.createElement('tr');
         row.className = "border-b border-gray-100 hover:bg-gray-50/80 transition-colors";
@@ -193,12 +200,12 @@ function szukajImplementacja() {
             <td class="p-3 font-bold text-gray-700">${sklep}</td>
             <td class="p-3">
                 <div class="font-semibold text-gray-900">${frazaDoWyswietlenia}</div>
-                <div class="text-xs text-gray-400 max-w-md truncate">Wyszukiwanie w oparciu o silnik domeny ${domena}</div>
+                <div class="text-xs text-gray-400 max-w-md truncate">Wyszukiwanie w wyszukiwarce domeny ${domena}</div>
             </td>
             <td class="p-3 text-right">
                 <div class="inline-flex items-center gap-1">
-                    <input type="number" id="${uniqueId}" step="0.01" min="0" placeholder="0.00" 
-                           class="w-24 bg-white border border-gray-300 rounded-lg p-1.5 text-sm font-bold text-right text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <input type="number" id="${uniqueId}" data-sklep="${sklep}" step="0.01" min="0" placeholder="brak" 
+                           class="w-24 bg-white border border-gray-300 rounded-lg p-1.5 text-sm font-bold text-right text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none input-cena-wynik">
                     <span class="text-xs font-bold text-gray-500">zł</span>
                 </div>
             </td>
@@ -207,11 +214,8 @@ function szukajImplementacja() {
                     Otwórz sklep <i data-lucide="external-link" class="w-3 h-3"></i>
                 </a>
             </td>
-            <td class="p-3 text-center">
-                <button onclick="ZatwierdzPozycje('${sklep}', '${uniqueId}', '${ostatecznaNazwaRaportu.replace(/'/g, "\\'")}')" 
-                        class="bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all cursor-pointer border-0 flex items-center gap-1 mx-auto">
-                    <i data-lucide="plus" class="w-3 h-3"></i> Uwzględnij
-                </button>
+            <td class="p-3 text-center text-xs text-gray-400 italic">
+                Czeka na zbiorcze dodanie
             </td>
         `;
         tabelaWynikow.appendChild(row);
@@ -221,76 +225,133 @@ function szukajImplementacja() {
 }
 
 // ==========================================
-// 5. OBSŁUGA LISTY RAPORTU ORAZ USUWANIA
+// 5. OBSŁUGA DYNAMICZNEGO I ZGRUPOWANEGO RAPORTU
 // ==========================================
 function InicjalizujNaglowkiRaportu() {
     const naglowek = document.getElementById('naglowek-tabeli-raportu');
-    if (naglowek) {
-        naglowek.innerHTML = `
-            <th class="p-2.5">Data</th>
-            <th class="p-2.5">Kategoria</th>
-            <th class="p-2.5">Sklep</th>
-            <th class="p-2.5">Artykuł / Produkt</th>
-            <th class="p-2.5 text-right">Cena</th>
-            <th class="p-2.5 text-center">Akcja</th>
+    if (!naglowek) return;
+
+    // Budowanie nagłówków tabeli w zależności od sklepów przypisanych do danej kategorii
+    let html = `
+        <th class="p-2.5">Data</th>
+        <th class="p-2.5">Kategoria</th>
+        <th class="p-2.5">Artykuł / Produkt</th>
+    `;
+    
+    aktywneSklepyKategorii.forEach(sklep => {
+        html += `
+            <th class="p-2.5 text-right border-l border-gray-200 bg-gray-50">${sklep} (Cena)</th>
+            <th class="p-2.5 text-center bg-gray-50 text-gray-400 font-normal">Link</th>
         `;
-    }
+    });
+
+    html += `<th class="p-2.5 text-center border-l border-gray-200">Akcja</th>`;
+    naglowek.innerHTML = html;
 }
 
-function ZatwierdzPozycje(sklep, inputId, domyslnaNazwa) {
-    const cenaInput = document.getElementById(inputId);
-    const cenaWpisana = parseFloat(cenaInput.value);
+function ZatwierdzCaloscDoRaportu() {
+    const tytulInput = document.getElementById('search-title');
+    const eanInput = document.getElementById('search-ean');
+    const inputData = document.getElementById('data-analizy');
+    
+    const tytul = tytulInput ? tytulInput.value.trim() : "";
+    const ean = (aktywnaKategoria === 'Książki' && eanInput) ? eanInput.value.trim() : "";
+    const dataAnalizy = inputData && inputData.value ? inputData.value : new Date().toLocaleDateString('pl-PL');
 
-    if (isNaN(cenaWpisana) || cenaWpisana <= 0) {
-        alert('Wpisz poprawną, sprawdzoną cenę przed dodaniem do raportu!');
+    const ostatecznaNazwaProduktu = ean ? `${tytul} (EAN: ${ean})` : tytul;
+
+    // Pobranie wpisanych cen ze wszystkich pól
+    const inputs = document.querySelectorAll('.input-cena-wynik');
+    let cenyObiekt = {};
+    let linkiObiekt = {};
+    let czyDodanoCokolwiek = false;
+
+    inputs.forEach(input => {
+        const sklep = input.getAttribute('data-sklep');
+        const cenaWartosc = parseFloat(input.value);
+
+        if (!isNaN(cenaWartosc) && cenaWartosc > 0) {
+            cenyObiekt[sklep] = cenaWartosc.toFixed(2).replace('.', ',') + ' zł';
+            linkiObiekt[sklep] = biezaceLinkiWyszukiwania[sklep] || `https://${SKLEP_DOMENY[sklep]}`;
+            czyDodanoCokolwiek = true;
+        } else {
+            cenyObiekt[sklep] = "-"; // Brak wprowadzonej ceny dla danego sklepu
+            linkiObiekt[sklep] = "";
+        }
+    });
+
+    if (!czyDodanoCokolwiek) {
+        alert('Wprowadź cenę dla co najmniej jednego sklepu przed dodaniem produktu do zestawienia!');
         return;
     }
 
-    const sformatowanaCena = cenaWpisana.toFixed(2).replace('.', ',') + ' zł';
-    WstrzyknijDoTabeliRaportu(sklep, domyslnaNazwa, sformatowanaCena);
-    cenaInput.value = '';
-}
-
-function WstrzyknijDoTabeliRaportu(sklep, produkt, cena) {
-    const raportBox = document.getElementById('raport-box');
-    const tabelaBody = document.getElementById('tabela-raportu-body');
-    const inputData = document.getElementById('data-analizy');
-    const dataAnalizy = inputData && inputData.value ? inputData.value : new Date().toLocaleDateString('pl-PL');
-
-    if (raportBox) raportBox.classList.remove('hidden');
-
     const idPozycji = Date.now() + Math.random().toString(36).substr(2, 5);
 
-    const nowaPozycja = {
+    const nowyProduktWiersz = {
         id: idPozycji,
         data: dataAnalizy,
         kategoria: aktywnaKategoria,
-        sklep: sklep,
-        produkt: produkt,
-        cena: cena
+        produkt: ostatecznaNazwaProduktu,
+        ceny: cenyObiekt,
+        linki: linkiObiekt
     };
 
-    window.listaRaportu.push(nowaPozycja);
+    window.listaRaportu.push(nowyProduktWiersz);
 
+    // Wyświetlenie sekcji raportu
+    document.getElementById('raport-box').classList.remove('hidden');
+    
+    // Renderowanie wiersza w tabeli HTML
+    const tabelaBody = document.getElementById('tabela-raportu-body');
     if (tabelaBody) {
         const row = document.createElement('tr');
         row.id = `row-${idPozycji}`;
         row.className = "border-b border-gray-100 hover:bg-gray-50/50 transition-colors";
-        row.innerHTML = `
-            <td class="p-2.5 text-gray-500">${nowaPozycja.data}</td>
-            <td class="p-2.5 font-medium text-gray-600">${nowaPozycja.kategoria}</td>
-            <td class="p-2.5 font-bold text-gray-800">${nowaPozycja.sklep}</td>
-            <td class="p-2.5 text-gray-900">${nowaPozycja.produkt}</td>
-            <td class="p-2.5 text-right font-bold text-emerald-600">${nowaPozycja.cena}</td>
-            <td class="p-2.5 text-center">
+        
+        let rowHtml = `
+            <td class="p-2.5 text-gray-500">${nowyProduktWiersz.data}</td>
+            <td class="p-2.5 font-medium text-gray-600">${nowyProduktWiersz.kategoria}</td>
+            <td class="p-2.5 font-bold text-gray-900 max-w-xs truncate" title="${nowyProduktWiersz.produkt}">${nowyProduktWiersz.produkt}</td>
+        `;
+
+        // Iteracja po wszystkich stałych sklepach tej kategorii gwarantuje stabilną strukturę kolumn
+        aktywneSklepyKategorii.forEach(sklep => {
+            const cena = nowyProduktWiersz.ceny[sklep] || "-";
+            const link = nowyProduktWiersz.linki[sklep] || "";
+            
+            if (cena !== "-") {
+                rowHtml += `
+                    <td class="p-2.5 text-right font-bold text-emerald-600 border-l border-gray-100 bg-gray-50/40">${cena}</td>
+                    <td class="p-2.5 text-center bg-gray-50/40">
+                        <a href="${link}" target="_blank" class="text-blue-600 hover:underline"><i data-lucide="link" class="w-3.5 h-3.5 inline"></i></a>
+                    </td>
+                `;
+            } else {
+                rowHtml += `
+                    <td class="p-2.5 text-right text-gray-300 italic border-l border-gray-100">-</td>
+                    <td class="p-2.5 text-center text-gray-300">-</td>
+                `;
+            }
+        });
+
+        rowHtml += `
+            <td class="p-2.5 text-center border-l border-gray-200">
                 <button onclick="UsunZRaportu('${idPozycji}')" class="text-red-500 hover:text-red-700 font-bold p-1 border-0 bg-transparent cursor-pointer text-xs flex items-center gap-0.5 mx-auto">
                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Usuń
                 </button>
             </td>
         `;
+
+        row.innerHTML = rowHtml;
         tabelaBody.appendChild(row);
         RenderujIkony();
     }
+
+    // Resetowanie pól formularza wyszukiwania
+    document.getElementById('wyniki-box').classList.add('hidden');
+    document.getElementById('tabela-wynikow').innerHTML = '';
+    tytulInput.value = '';
+    if (eanInput) eanInput.value = '';
 }
 
 function UsunZRaportu(id) {
@@ -304,7 +365,7 @@ function UsunZRaportu(id) {
 }
 
 // ==========================================
-// 6. EKSPORT DO EXCELA ORAZ GOOGLE SHEETS
+// 6. MATRYCOWY EKSPORT DO EXCELA / GOOGLE SHEETS
 // ==========================================
 function eksportujDoXLSX() {
     if (window.listaRaportu.length === 0) {
@@ -312,37 +373,66 @@ function eksportujDoXLSX() {
         return;
     }
 
-    let tsvContent = "Data analizy\tKategoria\tSklep\tArtykuł / Produkt\tCena rynkowa\n";
+    // 1. Budowa nagłówka dla pliku TSV (Schowek Google Sheets)
+    let tsvNaglowek = ["Data analizy", "Kategoria", "Artykuł / Produkt"];
+    aktywneSklepyKategorii.forEach(sklep => {
+        tsvNaglowek.push(`${sklep} (Cena)`);
+        tsvNaglowek.push(`${sklep} (Link)`);
+    });
+    
+    let tsvContent = tsvNaglowek.join("\t") + "\n";
+
+    // Wygenerowanie wierszy dla TSV
     window.listaRaportu.forEach(item => {
-        tsvContent += `${item.data}\t${item.kategoria}\t${item.sklep}\t${item.produkt}\t${item.cena}\n`;
+        let tsvWiersz = [item.data, item.kategoria, item.produkt];
+        aktywneSklepyKategorii.forEach(sklep => {
+            tsvWiersz.push(item.ceny[sklep] || "-");
+            tsvWiersz.push(item.linki[sklep] || "");
+        });
+        tsvContent += tsvWiersz.join("\t") + "\n";
     });
 
+    // Kopiowanie do schowka
     navigator.clipboard.writeText(tsvContent).then(() => {
-        const daneDoExcela = window.listaRaportu.map(item => ({
-            "Data analizy": item.data,
-            "Kategoria": item.kategoria,
-            "Sklep": item.sklep,
-            "Artykuł / Produkt": item.produkt,
-            "Cena rynkowa": item.cena
-        }));
+        
+        // 2. Budowa struktury obiektów JSON dedykowanych pod SheetJS (Eksport XLSX)
+        const daneDoExcela = window.listaRaportu.map(item => {
+            let rowObj = {
+                "Data analizy": item.data,
+                "Kategoria": item.kategoria,
+                "Artykuł / Produkt": item.produkt
+            };
+            
+            aktywneSklepyKategorii.forEach(sklep => {
+                rowObj[`${sklep} (Cena)`] = item.ceny[sklep] || "-";
+                rowObj[`${sklep} (Link)`] = item.linki[sklep] || "";
+            });
+            return rowObj;
+        });
 
         const worksheet = XLSX.utils.json_to_sheet(daneDoExcela);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Analiza Cenowa");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Analiza Porównawcza");
 
-        worksheet['!cols'] = [{wch: 15}, {wch: 20}, {wch: 15}, {wch: 40}, {wch: 15}];
+        // Obliczanie dynamicznej szerokości kolumn dla estetyki Excela
+        let colsSpec = [{wch: 15}, {wch: 18}, {wch: 35}];
+        aktywneSklepyKategorii.forEach(() => {
+            colsSpec.push({wch: 16}); // Kolumna ceny
+            colsSpec.push({wch: 12}); // Kolumna linku
+        });
+        worksheet['!cols'] = colsSpec;
 
         const inputData = document.getElementById('data-analizy');
         const dataPliku = inputData && inputData.value ? inputData.value : "raport";
         
-        XLSX.writeFile(workbook, `Raport_Cenowy_${dataPliku}.xlsx`);
+        XLSX.writeFile(workbook, `Raport_Macierzowy_${dataPliku}.xlsx`);
 
-        alert("Sukces!\n1. Pobrano plik Raportu w formacie XLSX.\n2. Dane tabeli skopiowano automatycznie do Twojego schowka!\n\nZostaniesz przeniesiony do Google Sheets. Kliknij dowolną komórkę i użyj Ctrl + V, aby wkleić dane.");
+        alert("Sukces!\n1. Pobrano sformatowany raport w pliku XLSX (struktura kolumnowa).\n2. Dane tabeli skopiowano automatycznie do schowka!\n\nZostaniesz przekierowany do Google Sheets. Kliknij komórkę A1 i użyj Ctrl + V, aby zachować idealny podział na kolumny.");
         window.open("https://sheets.new", "_blank");
         
     }).catch(err => {
         console.error('Błąd zapisu do schowka: ', err);
-        alert("Pobrano plik Excel, ale wystąpił problem z automatycznym kopiowaniem do schowka.");
+        alert("Pobrano plik Excel, ale wystąpił problem z automatycznym zapisaniem tabeli w schowku systemowym.");
     });
 }
 
@@ -350,6 +440,6 @@ function eksportujDoXLSX() {
 window.pokazEkranGlowny = pokazEkranGlowny;
 window.wybierzKategorie = wybierzKategorie;
 window.szukajImplementacja = szukajImplementacja;
-window.ZatwierdzPozycje = ZatwierdzPozycje;
+window.ZatwierdzCaloscDoRaportu = ZatwierdzCaloscDoRaportu;
 window.UsunZRaportu = UsunZRaportu;
 window.eksportujDoXLSX = eksportujDoXLSX;

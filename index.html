@@ -115,7 +115,7 @@
                                class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-inner"
                                onkeypress="if(event.key === 'Enter') szukajImplementacja()">
                     </div>
-                    <div>
+                    <div id="box-ean">
                         <label for="search-ean" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Kod EAN (13 cyfr):</label>
                         <input type="text" id="search-ean" placeholder="np. 9788382651234" 
                                class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-inner"
@@ -149,6 +149,12 @@
                     <tbody id="tabela-wynikow"></tbody>
                 </table>
             </div>
+            <!-- Przycisk zatwierdzający cały zestaw cen dla danej nazwy przedmiotu -->
+            <div class="flex justify-end mt-4 border-t border-gray-100 pt-4">
+                <button onclick="ZatwierdzCaloscDoRaportu()" class="bg-gray-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all cursor-pointer border-0 flex items-center gap-2">
+                    <i data-lucide="folder-plus" class="w-4 h-4 text-green-400"></i> Dodaj zebrane ceny do raportu zbiorczego
+                </button>
+            </div>
         </div>
 
         <!-- ZBIORCZA LISTA DO EKSPORTU -->
@@ -166,10 +172,10 @@
             </div>
             
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-gray-600">
+                <table class="w-full text-left text-xs text-gray-600 whitespace-nowrap">
                     <thead class="bg-gray-100 text-gray-600 uppercase tracking-wider font-bold">
                         <tr id="naglowek-tabeli-raportu">
-                            <!-- Nagłówki dynamiczne -->
+                            <!-- Nagłówki generowane w 100% dynamicznie zależnie od sklepów w kategorii -->
                         </tr>
                     </thead>
                     <tbody id="tabela-raportu-body" class="divide-y divide-gray-100"></tbody>
