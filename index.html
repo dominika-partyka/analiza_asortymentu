@@ -7,17 +7,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
+    <!-- Oficjalny skrypt Google CSE z Twoim identyfikatorem wyszukiwarki -->
+    <script async src="https://cse.google.com/cse.js?cx=1cdcf117b9b234479"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans pt-16">
 
-<!-- PASEK NAWIGACYJNY Z LOGO -->
+    <!-- PASEK NAWIGACYJNY Z LOGO -->
     <nav class="bg-[#002f6c] text-white shadow-md px-6 py-2 fixed top-0 left-0 right-0 z-50">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             
             <button onclick="pokazEkranGlowny()" class="flex items-center gap-3 hover:opacity-90 transition-all cursor-pointer group">
-                <!-- LOGO LIDL Z PLIKU PNG -->
                 <img src="Lidl_logo.png" alt="Lidl Logo" class="h-9 w-9 rounded-md object-contain shadow-sm">
-                
                 <div class="flex items-center gap-1.5 text-gray-100 group-hover:text-white font-medium text-sm md:text-base">
                     <i data-lucide="trending-up" class="w-5 h-5 text-yellow-400"></i>
                     <span class="font-bold tracking-wide">Panel Analityczny</span>
@@ -52,7 +52,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Kafel Książki -->
             <div onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki'])" 
                  class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
                 <div class="w-16 h-16 bg-blue-50 text-[#002f6c] rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -62,7 +61,6 @@
                 <p class="text-gray-500 text-sm">Wyszukiwanie po tytule, autorze lub kodzie EAN/ISBN w księgarniach internetowych.</p>
             </div>
 
-            <!-- Kafel Back to School -->
             <div onclick="wybierzKategorie('Back to School', 'graduation-cap', ['Biedronka', 'Aldi', 'Sinsay', 'Action'])" 
                  class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
                 <div class="w-16 h-16 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-yellow-500 group-hover:text-white transition-colors">
@@ -72,7 +70,6 @@
                 <p class="text-gray-500 text-sm">Analiza sezonowych artykułów szkolnych, artykułów papierniczych i odzieży w Biedronka, Aldi, Sinsay, Action.</p>
             </div>
 
-            <!-- Kafel Zabawki -->
             <div onclick="wybierzKategorie('Zabawki', 'dribbble', ['Smyk', 'Allegro', 'Empik'])" 
                  class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
                 <div class="w-16 h-16 bg-pink-50 text-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-pink-500 group-hover:text-white transition-colors">
@@ -111,20 +108,34 @@
                 </div>
             </div>
 
-            <!-- NAPRAWIONY PAS WYSZUKIWANIA (STABILNE PISANIE) -->
+            <!-- PAS WYSZUKIWANIA STERUJĄCY GOOGLE CSE -->
             <div class="space-y-2">
                 <label for="search-input" class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Wpisz szukany produkt:</label>
                 <div class="flex gap-2">
                     <input type="text" id="search-input" placeholder="Np. zeszyt A5, kredki świecowe, klocki..." 
                            class="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none shadow-inner">
-                    <button onclick="uruchomWyszukiwanie()" class="bg-[#002f6c] text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-800 transition-colors cursor-pointer flex items-center gap-2">
-                        <i data-lucide="search" class="w-4 h-4"></i> Szukaj
+                    <button onclick="uruchomWyszukiwanieWewnetrzne()" class="bg-[#002f6c] text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-800 transition-colors cursor-pointer flex items-center gap-2">
+                        <i data-lucide="search" class="w-4 h-4"></i> Szukaj w panelu
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- SEKCJA ASYSTENTA SYSTEMU FOCUS (NOWOŚĆ!) -->
+        <!-- UKRYTY ORYGINALNY ELEMENT GOOGLE (NIEZBĘDNY DO DZIAŁANIA) -->
+        <div class="hidden">
+            <div class="gcse-searchresults-only" data-gname="lidl-search"></div>
+        </div>
+
+        <!-- MIEJSCE NA REZULTATY WYSZUKIWANIA BEZPOŚREDNIO W PANELU -->
+        <div id="google-results-box" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 anim-fade-in">
+            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <i data-lucide="list-video" class="w-4 h-4 text-blue-600"></i> Wyniki wyszukiwania konkurencji:
+            </h3>
+            <!-- Tutaj Google wstrzyknie wyniki -->
+            <div id="inside-results"></div>
+        </div>
+
+        <!-- SEKCJA ASYSTENTA SYSTEMU FOCUS -->
         <div class="bg-amber-50 rounded-2xl border border-amber-200 p-6 mb-6 anim-fade-in">
             <h3 class="text-sm font-bold text-amber-900 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <i data-lucide="info" class="w-4 h-4 text-amber-700"></i> 🔎 Ściągawka filtrów dla systemu FOCUS
