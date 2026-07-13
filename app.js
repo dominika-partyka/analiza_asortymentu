@@ -9,12 +9,12 @@ const SKLEP_DOMENY = {
     "Smyk": "smyk.com",
     "Empik": "empik.com",
     "Tania Książka": "taniaksiazka.pl",
-    "Tantis": "tantis.pl", // ZAMIANA: Świat Książki -> Tantis
+    "Tantis": "tantis.pl",
     "Allegro": "allegro.pl"
 };
 
 const SKLEPY_KATEGORII = {
-    "Książki": ["Empik", "Tania Książka", "Tantis", "Smyk"], // Podmieniony na Tantis
+    "Książki": ["Empik", "Tania Książka", "Tantis", "Smyk"],
     "Back to School": ["Biedronka", "Aldi", "Sinsay", "Action"],
     "Zabawki": ["Smyk", "Allegro", "Empik"]
 };
@@ -28,11 +28,10 @@ const KOLORY_KATEGORII = {
 let aktywneSklepyKategorii = [];
 let aktywnaKategoria = "";
 window.listaRaportu = []; 
-// Struktura obiektów w liście raportu zmieniła się na:
-// { id, data, kategoria, produkt, ceny: { "Sklep1": "12,34 zł", ... }, linki: { "Sklep1": "url", ... } }
+// Struktura obiektów: { produkt, data, kategoria, ceny: { "Sklep": "Cena" }, linki: { "Sklep": "URL" } }
 
-// Tymczasowy schowek na linki wygenerowane podczas bieżącego wyszukiwania
-let biezaceLinkiWyszukiwania = {};
+// Słownik przechowujący wygenerowane linki podczas ostatniego wyszukiwania
+let mapowanieLinkowBiezacegoWyszukiwania = {};
 
 // ==========================================
 // 2. INICJALIZACJA I OBSŁUGA STARTOWA
@@ -69,7 +68,7 @@ function pokazEkranGlowny() {
     document.getElementById('current-category-badge').classList.add('hidden');
     aktywnaKategoria = "";
     aktywneSklepyKategorii = [];
-    window.listaRaportu = []; // Reset zestawienia przy powrocie do głównego menu
+    window.listaRaportu = [];
     document.getElementById('raport-box').classList.add('hidden');
     document.getElementById('tabela-raportu-body').innerHTML = '';
 }
@@ -91,7 +90,6 @@ function wybierzKategorie(nazwaKategorii, ikona) {
     iconBox.className = `w-12 h-12 rounded-xl flex items-center justify-center text-white ${KOLORY_KATEGORII[nazwaKategorii] || 'bg-blue-600'}`;
     iconBox.innerHTML = `<i data-lucide="${ikona || 'bookmark'}"></i>`;
 
-    // DYNAMICZNE UKRYWANIE KODU EAN (Tylko dla Książek)
     const boxEan = document.getElementById('box-ean');
     if (nazwaKategorii === 'Książki') {
         boxEan.style.display = 'block';
@@ -99,7 +97,6 @@ function wybierzKategorie(nazwaKategorii, ikona) {
         boxEan.style.display = 'none';
     }
 
-    // Czyszczenie i przygotowanie tabeli raportu
     document.getElementById('wyniki-box').classList.add('hidden');
     document.getElementById('tabela-wynikow').innerHTML = '';
     document.getElementById('search-title').value = '';
@@ -138,14 +135,13 @@ function PobierzZaznaczoneSklepy() {
 }
 
 // ==========================================
-// 4. INTELIGENTNA WYSZUKIWARKA (NAZWA / EAN) - POPRAWIONA WERSJA DLA TANIEJ KSIĄŻKI
+// 4. INTELIGENTNA WYSZUKIWARKA (NAZWA / EAN)
 // ==========================================
 function szukajImplementacja() {
     const tytulInput = document.getElementById('search-title');
     const eanInput = document.getElementById('search-ean');
     
     const tytul = tytulInput ? tytulInput.value.trim() : "";
-    // Jeśli nie jesteśmy w książkach, ignorujemy wartość EAN
     const ean = (aktywnaKategoria === 'Książki' && eanInput) ? eanInput.value.trim() : "";
 
     if (aktywnaKategoria === 'Książki' && !tytul && ean) {
@@ -163,7 +159,7 @@ function szukajImplementacja() {
 
     wynikiBox.classList.remove('hidden');
     tabelaWynikow.innerHTML = '';
-    biezaceLinkiWyszukiwania = {}; // Wyczyszczenie tymczasowej tablicy linków
+    mapowanieLinkowBiezacegoWyszukiwania = {}; 
 
     const wybraneSklepy = PobierzZaznaczoneSklepy();
 
@@ -174,16 +170,10 @@ function szukajImplementacja() {
         const domena = SKLEP_DOMENY[sklep] || "google.com";
         let linkWeryfikacyjny = `https://${domena}`;
 
-        // Budowanie frazy wyszukiwania: Tytuł + EAN (jeśli podano) lub sam Tytuł
         let queryStr = ean ? `${tytul} ${ean}` : tytul;
-        
-        // Domyślne kodowanie URL (np. dla Allegro czy Empiku)
         const encodedQuery = encodeURIComponent(queryStr);
-        
-        // Specjalne kodowanie za pomocą plusów zamiast %20 (wymagane przez Tanią Książkę i niektóre silniki)
         const queryWithPluses = encodeURIComponent(queryStr).replace(/%20/g, '+');
 
-        // Mapowanie linków bezpośrednich z uwzględnieniem poprawek silnika
         if (domena.includes('biedronka.pl')) linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodedQuery}`;
         else if (domena.includes('action.com')) linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodedQuery}`;
         else if (domena.includes('aldi.pl')) linkWeryfikacyjny = `https://www.aldi.pl/wyszukiwanie.html?q=${encodedQuery}`;
@@ -191,16 +181,12 @@ function szukajImplementacja() {
         else if (domena.includes('empik.com')) linkWeryfikacyjny = `https://www.empik.com/szukaj/produkt?q=${encodedQuery}`;
         else if (domena.includes('allegro.pl')) linkWeryfikacyjny = `https://allegro.pl/listing?string=${encodedQuery}`;
         else if (domena.includes('smyk.com')) linkWeryfikacyjny = `https://www.smyk.com/szukaj/produkt?q=${encodedQuery}`;
-        
-        // POPRAWKA: Tania Książka znacznie lepiej reaguje na tradycyjne zapytanie z parametrem ?q= lub czysty slug z plusami
         else if (domena.includes('taniaksiazka.pl')) linkWeryfikacyjny = `https://www.taniaksiazka.pl/szukaj?q=${queryWithPluses}`;
-        
         else if (domena.includes('tantis.pl')) linkWeryfikacyjny = `https://tantis.pl/szukaj?q=${encodedQuery}`;
 
-        // Zapisujemy poprawny link w pamięci podręcznej
-        biezaceLinkiWyszukiwania[sklep] = linkWeryfikacyjny;
-
+        mapowanieLinkowBiezacegoWyszukiwania[sklep] = linkWeryfikacyjny;
         const uniqueId = `cena-${index}`;
+        const escapedNazwaArtykulu = frazaDoWyswietlenia.replace(/'/g, "\\'");
 
         const row = document.createElement('tr');
         row.className = "border-b border-gray-100 hover:bg-gray-50/80 transition-colors";
@@ -212,8 +198,8 @@ function szukajImplementacja() {
             </td>
             <td class="p-3 text-right">
                 <div class="inline-flex items-center gap-1">
-                    <input type="number" id="${uniqueId}" data-sklep="${sklep}" step="0.01" min="0" placeholder="brak" 
-                           class="w-24 bg-white border border-gray-300 rounded-lg p-1.5 text-sm font-bold text-right text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none input-cena-wynik">
+                    <input type="number" id="${uniqueId}" step="0.01" min="0" placeholder="0.00" 
+                           class="w-24 bg-white border border-gray-300 rounded-lg p-1.5 text-sm font-bold text-right text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <span class="text-xs font-bold text-gray-500">zł</span>
                 </div>
             </td>
@@ -222,8 +208,11 @@ function szukajImplementacja() {
                     Otwórz sklep <i data-lucide="external-link" class="w-3 h-3"></i>
                 </a>
             </td>
-            <td class="p-3 text-center text-xs text-gray-400 italic">
-                Czeka na zbiorcze dodanie
+            <td class="p-3 text-center">
+                <button onclick="ZatwierdzPozycje('${sklep}', '${uniqueId}', '${escapedNazwaArtykulu}')" 
+                        class="bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all cursor-pointer border-0 flex items-center gap-1 mx-auto">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Uwzględnij
+                </button>
             </td>
         `;
         tabelaWynikow.appendChild(row);
@@ -232,120 +221,137 @@ function szukajImplementacja() {
     RenderujIkony();
 }
 
-
 // ==========================================
-// 5. OBSŁUGA DYNAMICZNEGO I ZGRUPOWANEGO RAPORTU
+// 5. OBSŁUGA POZIOMEGO RAPORTU (JEDEN WIERSZ = JEDEN ARTYKUŁ)
 // ==========================================
 function InicjalizujNaglowkiRaportu() {
     const naglowek = document.getElementById('naglowek-tabeli-raportu');
     if (!naglowek) return;
 
-    // Budowanie nagłówków tabeli w zależności od sklepów przypisanych do danej kategorii
     let html = `
-        <th class="p-2.5">Data</th>
+        <th class="p-2.5">Data analizy</th>
         <th class="p-2.5">Kategoria</th>
         <th class="p-2.5">Artykuł / Produkt</th>
     `;
     
+    // Generowanie kolumn cen dla każdego sklepu w danej kategorii
     aktywneSklepyKategorii.forEach(sklep => {
-        html += `
-            <th class="p-2.5 text-right border-l border-gray-200 bg-gray-50">${sklep} (Cena)</th>
-            <th class="p-2.5 text-center bg-gray-50 text-gray-400 font-normal">Link</th>
-        `;
+        html += `<th class="p-2.5 text-right border-l border-gray-200 bg-gray-50">${sklep}</th>`;
     });
 
-    html += `<th class="p-2.5 text-center border-l border-gray-200">Akcja</th>`;
+    // Końcowa kolumna na zebrane linki weryfikacyjne
+    html += `
+        <th class="p-2.5 text-center border-l border-gray-200">Linki weryfikacyjne</th>
+        <th class="p-2.5 text-center">Akcja</th>
+    `;
     naglowek.innerHTML = html;
 }
 
-function ZatwierdzCaloscDoRaportu() {
-    const tytulInput = document.getElementById('search-title');
-    const eanInput = document.getElementById('search-ean');
-    const inputData = document.getElementById('data-analizy');
-    
-    const tytul = tytulInput ? tytulInput.value.trim() : "";
-    const ean = (aktywnaKategoria === 'Książki' && eanInput) ? eanInput.value.trim() : "";
-    const dataAnalizy = inputData && inputData.value ? inputData.value : new Date().toLocaleDateString('pl-PL');
+function ZatwierdzPozycje(sklep, inputId, nazwaArtykulu) {
+    const cenaInput = document.getElementById(inputId);
+    const cenaWpisana = parseFloat(cenaInput.value);
 
-    const ostatecznaNazwaProduktu = ean ? `${tytul} (EAN: ${ean})` : tytul;
-
-    // Pobranie wpisanych cen ze wszystkich pól
-    const inputs = document.querySelectorAll('.input-cena-wynik');
-    let cenyObiekt = {};
-    let linkiObiekt = {};
-    let czyDodanoCokolwiek = false;
-
-    inputs.forEach(input => {
-        const sklep = input.getAttribute('data-sklep');
-        const cenaWartosc = parseFloat(input.value);
-
-        if (!isNaN(cenaWartosc) && cenaWartosc > 0) {
-            cenyObiekt[sklep] = cenaWartosc.toFixed(2).replace('.', ',') + ' zł';
-            linkiObiekt[sklep] = biezaceLinkiWyszukiwania[sklep] || `https://${SKLEP_DOMENY[sklep]}`;
-            czyDodanoCokolwiek = true;
-        } else {
-            cenyObiekt[sklep] = "-"; // Brak wprowadzonej ceny dla danego sklepu
-            linkiObiekt[sklep] = "";
-        }
-    });
-
-    if (!czyDodanoCokolwiek) {
-        alert('Wprowadź cenę dla co najmniej jednego sklepu przed dodaniem produktu do zestawienia!');
+    if (isNaN(cenaWpisana) || cenaWpisana <= 0) {
+        alert('Wpisz poprawną, sprawdzoną cenę przed dodaniem do raportu!');
         return;
     }
 
-    const idPozycji = Date.now() + Math.random().toString(36).substr(2, 5);
+    const sformatowanaCena = cenaWpisana.toFixed(2).replace('.', ',') + ' zł';
+    const inputData = document.getElementById('data-analizy');
+    const dataAnalizy = inputData && inputData.value ? inputData.value : new Date().toLocaleDateString('pl-PL');
+    const linkZrodlowy = mapowanieLinkowBiezacegoWyszukiwania[sklep] || `https://${SKLEP_DOMENY[sklep]}`;
 
-    const nowyProduktWiersz = {
-        id: idPozycji,
-        data: dataAnalizy,
-        kategoria: aktywnaKategoria,
-        produkt: ostatecznaNazwaProduktu,
-        ceny: cenyObiekt,
-        linki: linkiObiekt
-    };
+    // Szukamy czy ten artykuł został już wcześniej wprowadzony do zestawienia
+    let istniejącyArtykul = window.listaRaportu.find(item => item.produkt === nazwaArtykulu && item.kategoria === aktywnaKategoria);
 
-    window.listaRaportu.push(nowyProduktWiersz);
+    if (istniejącyArtykul) {
+        // AKTUALIZACJA ISTNIEJĄCEGO WIERSZA
+        istniejącyArtykul.ceny[sklep] = sformatowanaCena;
+        istniejącyArtykul.linki[sklep] = linkZrodlowy;
+    } else {
+        // TWORZENIE NOWEGO OBIEKTU MACIERZOWEGO
+        let nowyWpis = {
+            data: dataAnalizy,
+            kategoria: aktywnaKategoria,
+            produkt: nazwaArtykulu,
+            ceny: {},
+            linki: {}
+        };
 
-    // Wyświetlenie sekcji raportu
-    document.getElementById('raport-box').classList.remove('hidden');
+        // Wypełnienie domyślne minusami dla wszystkich sklepów z kategorii
+        aktywneSklepyKategorii.forEach(s => {
+            nowyWpis.ceny[s] = "-";
+            nowyWpis.linki[s] = "";
+        });
+
+        // Nadpisanie danymi aktualnie klikniętego sklepu
+        nowyWpis.ceny[sklep] = sformatowanaCena;
+        nowyWpis.linki[sklep] = linkZrodlowy;
+
+        window.listaRaportu.push(nowyWpis);
+    }
+
+    // Wyczyszczenie pola input po udanym dodaniu
+    cenaInput.value = '';
     
-    // Renderowanie wiersza w tabeli HTML
+    // Przerysowanie tabeli raportowej na podstawie zaktualizowanych danych strukturalnych
+    OdswiezWidokTabeliRaportu();
+}
+
+function OdswiezWidokTabeliRaportu() {
+    const raportBox = document.getElementById('raport-box');
     const tabelaBody = document.getElementById('tabela-raportu-body');
-    if (tabelaBody) {
+    
+    if (window.listaRaportu.length > 0 && raportBox) {
+        raportBox.classList.remove('hidden');
+    } else {
+        if (raportBox) raportBox.classList.add('hidden');
+        return;
+    }
+
+    if (!tabelaBody) return;
+    tabelaBody.innerHTML = '';
+
+    window.listaRaportu.forEach((item, indeks) => {
         const row = document.createElement('tr');
-        row.id = `row-${idPozycji}`;
         row.className = "border-b border-gray-100 hover:bg-gray-50/50 transition-colors";
-        
+
         let rowHtml = `
-            <td class="p-2.5 text-gray-500">${nowyProduktWiersz.data}</td>
-            <td class="p-2.5 font-medium text-gray-600">${nowyProduktWiersz.kategoria}</td>
-            <td class="p-2.5 font-bold text-gray-900 max-w-xs truncate" title="${nowyProduktWiersz.produkt}">${nowyProduktWiersz.produkt}</td>
+            <td class="p-2.5 text-gray-500">${item.data}</td>
+            <td class="p-2.5 font-medium text-gray-600">${item.kategoria}</td>
+            <td class="p-2.5 font-bold text-gray-900 max-w-xs truncate" title="${item.produkt}">${item.produkt}</td>
         `;
 
-        // Iteracja po wszystkich stałych sklepach tej kategorii gwarantuje stabilną strukturę kolumn
+        // Kolumny cen (wypełniane ceną lub automatycznym minusem)
         aktywneSklepyKategorii.forEach(sklep => {
-            const cena = nowyProduktWiersz.ceny[sklep] || "-";
-            const link = nowyProduktWiersz.linki[sklep] || "";
-            
-            if (cena !== "-") {
-                rowHtml += `
-                    <td class="p-2.5 text-right font-bold text-emerald-600 border-l border-gray-100 bg-gray-50/40">${cena}</td>
-                    <td class="p-2.5 text-center bg-gray-50/40">
-                        <a href="${link}" target="_blank" class="text-blue-600 hover:underline"><i data-lucide="link" class="w-3.5 h-3.5 inline"></i></a>
-                    </td>
-                `;
+            const cenaValue = item.ceny[sklep] || "-";
+            if (cenaValue !== "-") {
+                rowHtml += `<td class="p-2.5 text-right font-black text-emerald-600 border-l border-gray-100 bg-gray-50/30">${cenaValue}</td>`;
             } else {
-                rowHtml += `
-                    <td class="p-2.5 text-right text-gray-300 italic border-l border-gray-100">-</td>
-                    <td class="p-2.5 text-center text-gray-300">-</td>
+                rowHtml += `<td class="p-2.5 text-right text-gray-300 italic border-l border-gray-100">-</td>`;
+            }
+        });
+
+        // Zbiorcza sekcja linków na samym końcu wiersza
+        let linkiHtml = "";
+        aktywneSklepyKategorii.forEach(sklep => {
+            const url = item.linki[sklep];
+            if (url) {
+                linkiHtml += `
+                    <a href="${url}" target="_blank" title="Otwórz ofertę w ${sklep}" 
+                       class="inline-flex items-center justify-center w-6 h-6 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-md text-xs font-bold no-underline transition-all border border-blue-100 shadow-xs">
+                       ${sklep.charAt(0)}
+                    </a>
                 `;
             }
         });
 
         rowHtml += `
             <td class="p-2.5 text-center border-l border-gray-200">
-                <button onclick="UsunZRaportu('${idPozycji}')" class="text-red-500 hover:text-red-700 font-bold p-1 border-0 bg-transparent cursor-pointer text-xs flex items-center gap-0.5 mx-auto">
+                <div class="flex items-center justify-center gap-1">${linkiHtml || '<span class="text-gray-300 italic">-</span>'}</div>
+            </td>
+            <td class="p-2.5 text-center">
+                <button onclick="UsunZRaportuZIndeksu(${indeks})" class="text-red-500 hover:text-red-700 font-bold p-1 border-0 bg-transparent cursor-pointer text-xs flex items-center gap-0.5 mx-auto">
                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Usuń
                 </button>
             </td>
@@ -353,24 +359,14 @@ function ZatwierdzCaloscDoRaportu() {
 
         row.innerHTML = rowHtml;
         tabelaBody.appendChild(row);
-        RenderujIkony();
-    }
+    });
 
-    // Resetowanie pól formularza wyszukiwania
-    document.getElementById('wyniki-box').classList.add('hidden');
-    document.getElementById('tabela-wynikow').innerHTML = '';
-    tytulInput.value = '';
-    if (eanInput) eanInput.value = '';
+    RenderujIkony();
 }
 
-function UsunZRaportu(id) {
-    window.listaRaportu = window.listaRaportu.filter(item => item.id !== id);
-    const row = document.getElementById(`row-${id}`);
-    if (row) row.remove();
-
-    if (window.listaRaportu.length === 0) {
-        document.getElementById('raport-box').classList.add('hidden');
-    }
+function UsunZRaportuZIndeksu(indeks) {
+    window.listaRaportu.splice(indeks, 1);
+    OdswiezWidokTabeliRaportu();
 }
 
 // ==========================================
@@ -382,29 +378,32 @@ function eksportujDoXLSX() {
         return;
     }
 
-    // 1. Budowa nagłówka dla pliku TSV (Schowek Google Sheets)
+    // 1. Nagłówek schowka TSV (Google Sheets)
     let tsvNaglowek = ["Data analizy", "Kategoria", "Artykuł / Produkt"];
     aktywneSklepyKategorii.forEach(sklep => {
-        tsvNaglowek.push(`${sklep} (Cena)`);
-        tsvNaglowek.push(`${sklep} (Link)`);
+        tsvNaglowek.push(sklep);
+    });
+    aktywneSklepyKategorii.forEach(sklep => {
+        tsvNaglowek.push(`Link ${sklep}`);
     });
     
     let tsvContent = tsvNaglowek.join("\t") + "\n";
 
-    // Wygenerowanie wierszy dla TSV
+    // Dane schowka TSV
     window.listaRaportu.forEach(item => {
         let tsvWiersz = [item.data, item.kategoria, item.produkt];
         aktywneSklepyKategorii.forEach(sklep => {
             tsvWiersz.push(item.ceny[sklep] || "-");
-            tsvWiersz.push(item.linki[sklep] || "");
+        });
+        aktywneSklepyKategorii.forEach(sklep => {
+            tsvWiersz.push(item.linki[sklep] || "-");
         });
         tsvContent += tsvWiersz.join("\t") + "\n";
     });
 
-    // Kopiowanie do schowka
     navigator.clipboard.writeText(tsvContent).then(() => {
         
-        // 2. Budowa struktury obiektów JSON dedykowanych pod SheetJS (Eksport XLSX)
+        // 2. Eksport do stałego pliku Excel (.XLSX) za pomocą SheetJS
         const daneDoExcela = window.listaRaportu.map(item => {
             let rowObj = {
                 "Data analizy": item.data,
@@ -412,36 +411,38 @@ function eksportujDoXLSX() {
                 "Artykuł / Produkt": item.produkt
             };
             
+            // Kolumny z cenami
             aktywneSklepyKategorii.forEach(sklep => {
-                rowObj[`${sklep} (Cena)`] = item.ceny[sklep] || "-";
-                rowObj[`${sklep} (Link)`] = item.linki[sklep] || "";
+                rowObj[sklep] = item.ceny[sklep] || "-";
+            });
+            // Kolumny z linkami
+            aktywneSklepyKategorii.forEach(sklep => {
+                rowObj[`Link ${sklep}`] = item.linki[sklep] || "-";
             });
             return rowObj;
         });
 
         const worksheet = XLSX.utils.json_to_sheet(daneDoExcela);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Analiza Porównawcza");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Zestawienie Cenowe");
 
-        // Obliczanie dynamicznej szerokości kolumn dla estetyki Excela
-        let colsSpec = [{wch: 15}, {wch: 18}, {wch: 35}];
-        aktywneSklepyKategorii.forEach(() => {
-            colsSpec.push({wch: 16}); // Kolumna ceny
-            colsSpec.push({wch: 12}); // Kolumna linku
-        });
+        // Formatowanie szerokości kolumn arkusza
+        let colsSpec = [{wch: 15}, {wch: 15}, {wch: 35}];
+        aktywneSklepyKategorii.forEach(() => colsSpec.push({wch: 14})); // Ceny
+        aktywneSklepyKategorii.forEach(() => colsSpec.push({wch: 20})); // Linki
         worksheet['!cols'] = colsSpec;
 
         const inputData = document.getElementById('data-analizy');
         const dataPliku = inputData && inputData.value ? inputData.value : "raport";
         
-        XLSX.writeFile(workbook, `Raport_Macierzowy_${dataPliku}.xlsx`);
+        XLSX.writeFile(workbook, `Zestawienie_Konkurencji_${dataPliku}.xlsx`);
 
-        alert("Sukces!\n1. Pobrano sformatowany raport w pliku XLSX (struktura kolumnowa).\n2. Dane tabeli skopiowano automatycznie do schowka!\n\nZostaniesz przekierowany do Google Sheets. Kliknij komórkę A1 i użyj Ctrl + V, aby zachować idealny podział na kolumny.");
+        alert("Sukces!\n1. Wygenerowano i pobrano zestawienie poziome w pliku XLSX.\n2. Dane tabeli skopiowano automatycznie do schowka!\n\nWklej je w komórce A1 w nowo otwartym arkuszu Google Sheets przy użyciu Ctrl + V.");
         window.open("https://sheets.new", "_blank");
         
     }).catch(err => {
         console.error('Błąd zapisu do schowka: ', err);
-        alert("Pobrano plik Excel, ale wystąpił problem z automatycznym zapisaniem tabeli w schowku systemowym.");
+        alert("Pobrano plik Excel, lecz wystąpił problem z zapisem struktury do schowka systemowego.");
     });
 }
 
@@ -449,6 +450,5 @@ function eksportujDoXLSX() {
 window.pokazEkranGlowny = pokazEkranGlowny;
 window.wybierzKategorie = wybierzKategorie;
 window.szukajImplementacja = szukajImplementacja;
-window.ZatwierdzCaloscDoRaportu = ZatwierdzCaloscDoRaportu;
-window.UsunZRaportu = UsunZRaportu;
+window.ZatwierdzPozycje = ZatwierdzPozycje;
 window.eksportujDoXLSX = eksportujDoXLSX;
