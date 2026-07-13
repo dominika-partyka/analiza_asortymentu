@@ -249,41 +249,84 @@ function eksportujDoXLSX() {
         return;
     }
     
-    // Budujemy czysty kod tabeli z kodowaniem UTF-8, aby Arkusze automatycznie rozpoznały polskie znaki i strukturę
-    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">`;
-    html += `<head><meta charset="utf-8"></head><body>`;
-    html += `<table border="1"><thead><tr style="background-color: #f3f4f6; font-weight: bold;"><th>Nazwa artykułu</th>`;
-    
+    // Budujemy czysty format tabeli tekstowej (rozdzielanej tabulatorami), którą Arkusze Google i Excel rozumieją perfekcyjnie
+    let naglowki = ["Nazwa artykułu"];
     aktywneSklepy.forEach(sklep => {
-        html += `<th>Cena ${sklep}</th><th>Link ${sklep}</th>`;
+        naglowki.push(`Cena ${sklep}`);
+        naglowki.push(`Link ${sklep}`);
     });
-    html += `</tr></thead><tbody>`;
+    
+    let linie = [naglowki.join("\t")];
     
     KOSZYK_RAPORTU.forEach(item => {
-        html += `<tr><td>${item.nazwaWyszukiwana}</td>`;
+        let wiersz = [item.nazwaWyszukiwana];
         aktywneSklepy.forEach(sklep => {
             const daneSklepu = item.ofertySklepowe[sklep];
             if (daneSklepu) {
-                const cenaFormatowana = daneSklepu.cena.toFixed(2).replace('.', ',');
-                html += `<td>${cenaFormatowana}</td><td>${daneSklepu.link}</td>`;
+                wiersz.push(daneSklepu.cena.toFixed(2).replace('.', ',')); 
+                wiersz.push(daneSklepu.link);
             } else {
-                html += `<td></td><td></td>`;
+                wiersz.push(""); 
+                wiersz.push("");
             }
         });
-        html += `</tr>`;
+        linie.push(wiersz.join("\t"));
     });
-    html += `</tbody></table></body></html>`;
     
-    // Generujemy plik kompatybilny z automatycznym importem Arkuszy
-    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    const pelnyTekstDoSkopiowania = linie.join("\n");
+
+    // TWORZYMY DYNAMICZNE OKNO (MODAL) NA ŚRODKU EKRANU
+    let modal = document.createElement("div");
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100vw";
+    modal.style.height = "100vh";
+    modal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+    modal.style.display = "flex";
+    modal.style.justifyContent = "center";
+    modal.style.alignItems = "center";
+    modal.style.zIndex = "99999";
     
-    const linkPobierania = document.createElement("a");
-    const dataAnalizy = document.getElementById('data-analizy').value;
-    linkPobierania.setAttribute("href", url);
-    linkPobierania.setAttribute("download", `Raport_Cenowy_${dataAnalizy}.xls`);
-    document.body.appendChild(linkPobierania);
+    let modalContent = document.createElement("div");
+    modalContent.style.backgroundColor = "white";
+    modalContent.style.padding = "24px";
+    modalContent.style.borderRadius = "16px";
+    modalContent.style.width = "90%";
+    modalContent.style.maxWidth = "500px";
+    modalContent.style.boxShadow = "0 10px 25px rgba(0,0,0,0.1)";
     
-    linkPobierania.click();
-    document.body.removeChild(linkPobierania);
+    modalContent.innerHTML = `
+        <h3 style="font-weight: bold; margin-bottom: 8px; color: #1f2937;">Twój raport jest gotowy!</h3>
+        <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">Skopiuj poniższy tekst i wklej go bezpośrednio do swoich Arkuszy Google.</p>
+        <textarea id="kopia-textarea" style="width: 100%; height: 150px; font-family: monospace; font-size: 11px; padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; margin-bottom: 16px; background-color: #f9fafb;" readonly>${pelnyTekstDoSkopiowania}</textarea>
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+            <button id="btn-zamknij-modal" style="background-color: #e5e7eb; color: #374151; padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 13px; border: 0; cursor: pointer;">Zamknij</button>
+            <button id="btn-kopiuj-modal" style="background-color: #059669; color: white; padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 13px; border: 0; cursor: pointer;">Skopiuj tekst</button>
+        </div>
+    `;
+    
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+    
+    // Obsługa przycisków w oknie
+    document.getElementById("btn-zamknij-modal").onclick = function() {
+        document.body.removeChild(modal);
+    };
+    
+    document.getElementById("btn-kopiuj-modal").onclick = function() {
+        const textarea = document.getElementById("kopia-textarea");
+        textarea.select();
+        document.execCommand("copy");
+        
+        const btn = document.getElementById("btn-kopiuj-modal");
+        btn.innerText = "Skopiowano!";
+        btn.style.backgroundColor = "#2563eb";
+        
+        // Otwieramy bazowe Arkusze, żebyś mogła wybrać swój docelowy dokument roboczy
+        setTimeout(() => {
+            window.open('https://docs.google.com/spreadsheets/', '_blank');
+            document.body.removeChild(modal);
+        }, 600);
+    };
 }
