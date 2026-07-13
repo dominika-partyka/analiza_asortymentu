@@ -1,26 +1,28 @@
 // Inicjalizacja ikon Lucide
 lucide.createIcons();
 
-// ROZBUDOWANA TESTOWA BAZA DANYCH (MOCK-UP)
+// ROZBUDOWANA TESTOWA BAZA DANYCH (MOCK-UP) - dodane ID dla bezbłędnego klikania
 const BAZA_GAZETEK = [
-    { kategoria: "Back to School", sklep: "Biedronka", produkt: "Zeszyt A5 60k w kratkę", cena: 2.99, url: "https://www.biedronka.pl/pl/sklep/artykuły-szkolne/zeszyt-a5" },
-    { kategoria: "Back to School", sklep: "Biedronka", produkt: "Kredki świecowe Bambino 24 kolory", cena: 11.49, url: "https://www.biedronka.pl/pl/gazetka/kredki-bambino" },
-    { kategoria: "Back to School", sklep: "Aldi", produkt: "Zeszyt A5 60k Oxford premium", cena: 3.49, url: "https://www.aldi.pl/oferty-tygodnia/zeszyt-oxford" },
-    { kategoria: "Back to School", sklep: "Aldi", produkt: "Piórnik tuba Milan z wyposażeniem", cena: 24.99, url: "https://www.aldi.pl/oferty-tygodnia/piornik-milan" },
-    { kategoria: "Back to School", sklep: "Action", produkt: "Kredki ołówkowe metalowe etui 50 szt", cena: 9.99, url: "https://www.action.com/pl-pl/p/kredki-artystyczne/" },
-    { kategoria: "Back to School", sklep: "Action", produkt: "Zeszyt szkolny matowy A5 32k", cena: 0.99, url: "https://www.action.com/pl-pl/p/zeszyt-szkolny-a5/" },
-    { kategoria: "Back to School", sklep: "Sinsay", produkt: "Piórnik szkolny z organizerem", cena: 15.99, url: "https://www.sinsay.com/pl/pl/piornik-szkolny-organizer" },
-    { kategoria: "Back to School", sklep: "Sinsay", produkt: "Plecak szkolny pastelowy dziewczęcy", cena: 39.99, url: "https://www.sinsay.com/pl/pl/plecak-szkolny-pastel" },
+    { id: 0, kategoria: "Back to School", sklep: "Biedronka", produkt: "Zeszyt A5 60k w kratkę", cena: 2.99, url: "https://www.biedronka.pl/pl/sklep/artykuły-szkolne/zeszyt-a5" },
+    { id: 1, kategoria: "Back to School", sklep: "Biedronka", produkt: "Kredki świecowe Bambino 24 kolory", cena: 11.49, url: "https://www.biedronka.pl/pl/gazetka/kredki-bambino" },
+    { id: 2, kategoria: "Back to School", sklep: "Aldi", produkt: "Zeszyt A5 60k Oxford premium", cena: 3.49, url: "https://www.aldi.pl/oferty-tygodnia/zeszyt-oxford" },
+    { id: 3, kategoria: "Back to School", sklep: "Aldi", produkt: "Piórnik tuba Milan z wyposażeniem", cena: 24.99, url: "https://www.aldi.pl/oferty-tygodnia/piornik-milan" },
+    { id: 4, kategoria: "Back to School", sklep: "Action", produkt: "Kredki ołówkowe metalowe etui 50 szt", cena: 9.99, url: "https://www.action.com/pl-pl/p/kredki-artystyczne/" },
+    { id: 5, kategoria: "Back to School", sklep: "Action", produkt: "Zeszyt szkolny matowy A5 32k", cena: 0.99, url: "https://www.action.com/pl-pl/p/zeszyt-szkolny-a5/" },
+    { id: 6, kategoria: "Back to School", sklep: "Sinsay", produkt: "Piórnik szkolny z organizerem", cena: 15.99, url: "https://www.sinsay.com/pl/pl/piornik-szkolny-organizer" },
+    { id: 7, kategoria: "Back to School", sklep: "Sinsay", produkt: "Plecak szkolny pastelowy dziewczęcy", cena: 39.99, url: "https://www.sinsay.com/pl/pl/plecak-szkolny-pastel" },
 
-    { kategoria: "Książki", sklep: "Empik", produkt: "Wiedźmin: Ostatnie życzenie - A. Sapkowski", cena: 34.90, url: "https://www.empik.com/wiedxmin-ostatnie-zyczenie" },
-    { kategoria: "Książki", sklep: "Tania Książka", produkt: "Wiedźmin: Ostatnie życzenie - A. Sapkowski", cena: 29.80, url: "https://www.taniaksiazka.pl/wiedzmin-ostatnie-zyczenie" },
+    { id: 8, kategoria: "Książki", sklep: "Empik", produkt: "Wiedźmin: Ostatnie życzenie - A. Sapkowski", cena: 34.90, url: "https://www.empik.com/wiedxmin-ostatnie-zyczenie" },
+    { id: 9, kategoria: "Książki", sklep: "Tania Książka", produkt: "Wiedźmin: Ostatnie życzenie - A. Sapkowski", cena: 29.80, url: "https://www.taniaksiazka.pl/wiedzmin-ostatnie-zyczenie" },
     
-    { kategoria: "Zabawki", sklep: "Smyk", produkt: "Klocki LEGO Technic Wyścigówka", cena: 45.99, url: "https://www.smyk.com/p/lego-technic-samochod" },
-    { kategoria: "Zabawki", sklep: "Allegro", produkt: "Gra planszowa Monopoly Classic oryginał", cena: 99.00, url: "https://allegro.pl/oferta/monopoly-classic-gra-planszowa" }
+    { id: 10, kategoria: "Zabawki", sklep: "Smyk", produkt: "Klocki LEGO Technic Wyścigówka", cena: 45.99, url: "https://www.smyk.com/p/lego-technic-samochod" },
+    { id: 11, kategoria: "Zabawki", sklep: "Allegro", produkt: "Gra planszowa Monopoly Classic oryginał", cena: 99.00, url: "https://allegro.pl/oferta/monopoly-classic-gra-planszowa" }
 ];
 
 // KOSZYK PRZECHOWUJĄCY ELEMENTY DODANE DO RAPORTU
 let KOSZYK_RAPORTU = [];
+let ostatniaFraza = "";
+let ostatniaKategoria = "";
 
 function wybierzKategorie(nazwa, ikona, sklepy) {
     document.getElementById('ekran-glowny').classList.add('hidden');
@@ -47,13 +49,14 @@ function wybierzKategorie(nazwa, ikona, sklepy) {
     sklepy.forEach(sklep => {
         sklepyLista.innerHTML += `
             <label class="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors text-gray-700">
-                <input type="checkbox" checked value="${sklep}" onchange="odswiezTabeleRaportu()" class="sklep-checkbox rounded text-blue-600 focus:ring-blue-500">
+                <input type="checkbox" checked value="${sklep}" onchange="odswiezTabeleRaportu(); odswiezTabeleWynikow();" class="sklep-checkbox rounded text-blue-600 focus:ring-blue-500">
                 <span>${sklep}</span>
             </label>
         `;
     });
     
     document.getElementById('search-input').value = '';
+    KOSZYK_RAPORTU = []; // Czyszczenie raportu przy zmianie kategorii głównej
     
     odswiezTabeleRaportu();
     lucide.createIcons();
@@ -74,22 +77,20 @@ function szukajImplementacja() {
         return;
     }
     
-    odswiezTabeleWynikow(fraza, aktualnaKategoria);
+    ostatniaFraza = fraza;
+    ostatniaKategoria = aktualnaKategoria;
+    odswiezTabeleWynikow();
 }
 
-// ODDZIELNA FUNKCJA RENDEROWANIA WYNIKÓW WYSZUKIWANIA (Aby łatwo ją odświeżać bez alertów)
-function odswiezTabeleWynikow(fraza, kategoria) {
-    const frazaDoSzukania = fraza || document.getElementById('search-input').value.trim().toLowerCase();
-    const katDoSzukania = kategoria || document.getElementById('kat-title').innerText;
-    
-    if(!frazaDoSzukania) return;
+function odswiezTabeleWynikow() {
+    if(!ostatniaFraza) return;
 
     const zaznaczoneSklepy = Array.from(document.querySelectorAll('#sklepy-lista input:checked')).map(cb => cb.value);
     
     const znalezione = BAZA_GAZETEK.filter(item => {
-        return item.kategoria === katDoSzukania && 
+        return item.kategoria === ostatniaKategoria && 
                zaznaczoneSklepy.includes(item.sklep) && 
-               item.produkt.toLowerCase().includes(frazaDoSzukania);
+               item.produkt.toLowerCase().includes(ostatniaFraza);
     });
     
     const wynikiBox = document.getElementById('wyniki-box');
@@ -104,22 +105,19 @@ function odswiezTabeleWynikow(fraza, kategoria) {
     }
     
     znalezione.forEach((item) => {
-        const bezpiecznaNazwa = item.produkt.replace(/'/g, "\\'");
-        const bezpiecznyUrl = item.url.replace(/'/g, "\\'");
-        
-        // Sprawdzamy czy ta konkretna oferta jest już w koszyku
+        // Identyfikacja po ID wyklucza błędy parsowania stringów w JS
         const istnieje = KOSZYK_RAPORTU.some(r => r.nazwaWyszukiwana === item.produkt && r.ofertySklepowe[item.sklep]);
         
         let przyciskRaportu = '';
         if (istnieje) {
             przyciskRaportu = `
-                <button onclick="usunBezposrednioZRaportu('${item.sklep}', '${bezpiecznaNazwa}')" class="bg-red-50 text-red-700 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-1 mx-auto">
+                <button onclick="usunZRaportuPoID(${item.id})" class="bg-red-100 text-red-700 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer border-0">
                     Usuń z raportu
                 </button>
             `;
         } else {
             przyciskRaportu = `
-                <button onclick="dodajBezposrednioDoRaportu('${item.sklep}', '${bezpiecznaNazwa}', ${item.cena}, '${bezpiecznyUrl}')" class="bg-green-50 text-green-700 hover:bg-green-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-1 mx-auto">
+                <button onclick="dodajDoRaportuPoID(${item.id})" class="bg-green-100 text-green-700 hover:bg-green-600 hover:text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer border-0">
                     Dodaj do raportu
                 </button>
             `;
@@ -139,40 +137,41 @@ function odswiezTabeleWynikow(fraza, kategoria) {
     });
 }
 
-// DODAWANIE DO RAPORTU (BEZ ALERTÓW)
-function dodajBezposrednioDoRaportu(sklep, produkt, cena, url) {
-    let produktWKoszyku = KOSZYK_RAPORTU.find(item => item.nazwaWyszukiwana === produkt);
+function dodajDoRaportuPoID(id) {
+    const item = BAZA_GAZETEK.find(b => b.id === id);
+    if(!item) return;
+
+    let produktWKoszyku = KOSZYK_RAPORTU.find(r => r.nazwaWyszukiwana === item.produkt);
     
     if (!produktWKoszyku) {
         produktWKoszyku = {
-            nazwaWyszukiwana: produkt,
+            nazwaWyszukiwana: item.produkt,
             ofertySklepowe: {}
         };
         KOSZYK_RAPORTU.push(produktWKoszyku);
     }
     
-    produktWKoszyku.ofertySklepowe[sklep] = {
-        cena: cena,
-        link: url
+    produktWKoszyku.ofertySklepowe[item.sklep] = {
+        cena: item.cena,
+        link: item.url
     };
     
     document.getElementById('raport-box').classList.remove('hidden');
     
     odswiezTabeleRaportu();
-    odswiezTabeleWynikow(); // Synchroniczne odświeżenie przycisków w tabeli górnej
+    odswiezTabeleWynikow(); 
 }
 
-// USUWANIE Z RAPORTU
-function usunBezposrednioZRaportu(sklep, produkt) {
-    let produktWKoszyku = KOSZYK_RAPORTU.find(item => item.nazwaWyszukiwana === produkt);
+function usunZRaportuPoID(id) {
+    const item = BAZA_GAZETEK.find(b => b.id === id);
+    if(!item) return;
+
+    let produktWKoszyku = KOSZYK_RAPORTU.find(r => r.nazwaWyszukiwana === item.produkt);
     
     if (produktWKoszyku) {
-        // Usuwamy ofertę wybranego sklepu
-        delete produktWKoszyku.ofertySklepowe[sklep];
-        
-        // Jeśli produkt nie ma już ofert z żadnego sklepu, usuwamy cały wiersz artykułu
+        delete produktWKoszyku.ofertySklepowe[item.sklep];
         if (Object.keys(produktWKoszyku.ofertySklepowe).length === 0) {
-            KOSZYK_RAPORTU = KOSZYK_RAPORTU.filter(item => item.nazwaWyszukiwana !== produkt);
+            KOSZYK_RAPORTU = KOSZYK_RAPORTU.filter(r => r.nazwaWyszukiwana !== item.produkt);
         }
     }
     
@@ -180,7 +179,6 @@ function usunBezposrednioZRaportu(sklep, produkt) {
     odswiezTabeleWynikow();
 }
 
-// ODSWIEŻANIE TABELI ZBIORCZEJ NA DOLE
 function odswiezTabeleRaportu() {
     const checkboxes = Array.from(document.querySelectorAll('#sklepy-lista input'));
     if(checkboxes.length === 0) return;
@@ -220,7 +218,7 @@ function odswiezTabeleRaportu() {
             }
         });
         
-        // Przycisk usuwania całego wiersza z tabeli zbiorczej
+        // Bezpieczne usuwanie całego wiersza na podstawie dokładnego dopasowania nazwy
         const bezpiecznaNazwa = item.nazwaWyszukiwana.replace(/'/g, "\\'");
         wierszHtml += `
             <td class="p-3 text-center bg-red-50/20">
@@ -243,7 +241,6 @@ function usunCalyArtykulZRaportu(produkt) {
     odswiezTabeleWynikow();
 }
 
-// NOWA EKSPORTACJA: GENEROWANIE CZYSTEGO FORMATU EXCEL (XLSX)
 function eksportujDoXLSX() {
     const aktywneSklepy = Array.from(document.querySelectorAll('#sklepy-lista input:checked')).map(cb => cb.value);
     
@@ -252,7 +249,6 @@ function eksportujDoXLSX() {
         return;
     }
     
-    // 1. Definiujemy nagłówki pierwszego wiersza Excela
     let naglowki = ["Nazwa artykułu"];
     aktywneSklepy.forEach(sklep => {
         naglowki.push(`Cena ${sklep}`);
@@ -261,17 +257,16 @@ function eksportujDoXLSX() {
     
     let daneArkusza = [naglowki];
     
-    // 2. Mapujemy koszyk na wiersze danych Excela
     KOSZYK_RAPORTU.forEach(item => {
         let wiersz = [item.nazwaWyszukiwana];
         
         aktywneSklepy.forEach(sklep => {
             const daneSklepu = item.ofertySklepowe[sklep];
             if (daneSklepu) {
-                wiersz.push(daneSklepu.cena); // Wpisujemy jako liczbę, Excel sam sformatuje walutę
+                wiersz.push(daneSklepu.cena); 
                 wiersz.push(daneSklepu.link);
             } else {
-                wiersz.push(""); // Puste pole w Excelu
+                wiersz.push(""); 
                 wiersz.push("");
             }
         });
@@ -279,13 +274,11 @@ function eksportujDoXLSX() {
         daneArkusza.push(wiersz);
     });
     
-    // 3. Wykorzystanie biblioteki SheetJS do skompletowania pliku binarnego .xlsx
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(daneArkusza);
     
     XLSX.utils.book_append_sheet(wb, ws, "Raport Cenowy");
     
-    // Pobieranie pliku
     const dataAnalizy = document.getElementById('data-analizy').value;
     XLSX.writeFile(wb, `Raport_Cenowy_${dataAnalizy}.xlsx`);
 }
