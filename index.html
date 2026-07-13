@@ -24,15 +24,15 @@
             </button>
 
             <div class="flex items-center gap-1 md:gap-4 text-sm font-medium">
-                <button onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki', 'Smyk'])" 
+                <button onclick="wybierzKategorie('Książki', 'book-open')" 
                         class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0 text-white">
                     <i data-lucide="book-open" class="w-4 h-4 text-blue-300"></i> <span class="hidden sm:inline">Książki</span>
                 </button>
-                <button onclick="wybierzKategorie('Back to School', 'graduation-cap', ['Biedronka', 'Aldi', 'Sinsay', 'Action'])" 
+                <button onclick="wybierzKategorie('Back to School', 'graduation-cap')" 
                         class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0 text-white">
                     <i data-lucide="graduation-cap" class="w-4 h-4 text-yellow-300"></i> <span class="hidden sm:inline">Back to School</span>
                 </button>
-                <button onclick="wybierzKategorie('Zabawki', 'dribbble', ['Smyk', 'Allegro', 'Empik'])" 
+                <button onclick="wybierzKategorie('Zabawki', 'dribbble')" 
                         class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0 text-white">
                     <i data-lucide="dribbble" class="w-4 h-4 text-pink-300"></i> <span class="hidden sm:inline">Zabawki</span>
                 </button>
@@ -51,7 +51,7 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki', 'Smyk'])" 
+            <div onclick="wybierzKategorie('Książki', 'book-open')" 
                  class="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
                 <div class="w-16 h-16 bg-blue-50 text-[#002f6c] rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                     <i data-lucide="book-open" class="w-8 h-8"></i>
@@ -60,7 +60,7 @@
                 <p class="text-gray-500 text-sm">Wyszukiwanie w księgarniach internetowych.</p>
             </div>
 
-            <div onclick="wybierzKategorie('Back to School', 'graduation-cap', ['Biedronka', 'Aldi', 'Sinsay', 'Action'])" 
+            <div onclick="wybierzKategorie('Back to School', 'graduation-cap')" 
                  class="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
                 <div class="w-16 h-16 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-yellow-500 group-hover:text-white transition-colors">
                     <i data-lucide="graduation-cap" class="w-8 h-8"></i>
@@ -69,7 +69,7 @@
                 <p class="text-gray-500 text-sm">Analiza sezonowych artykułów szkolnych i odzieży.</p>
             </div>
 
-            <div onclick="wybierzKategorie('Zabawki', 'dribbble', ['Smyk', 'Allegro', 'Empik'])" 
+            <div onclick="wybierzKategorie('Zabawki', 'dribbble')" 
                  class="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
                 <div class="w-16 h-16 bg-pink-50 text-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-pink-500 group-hover:text-white transition-colors">
                     <i data-lucide="dribbble" class="w-8 h-8"></i>
@@ -107,13 +107,23 @@
                 </div>
             </div>
 
-            <div class="space-y-2">
-                <label for="search-input" class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Wpisz produkt (np. nazwa książki, kod EAN, monopoly):</label>
-                <div class="flex gap-2">
-                    <input type="text" id="search-input" placeholder="Wpisz słowo kluczowe lub 13-cyfrowy EAN..." 
-                           class="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-inner"
-                           onkeypress="if(event.key === 'Enter') szukajImplementacja()">
-                    <button onclick="szukajImplementacja()" class="bg-[#002f6c] text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-800 transition-colors cursor-pointer flex items-center gap-2 border-0">
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="search-title" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Tytuł / Nazwa artykułu:</label>
+                        <input type="text" id="search-title" placeholder="np. Harry Potter, Zeszyt A5..." 
+                               class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-inner"
+                               onkeypress="if(event.key === 'Enter') szukajImplementacja()">
+                    </div>
+                    <div>
+                        <label for="search-ean" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Kod EAN (13 cyfr):</label>
+                        <input type="text" id="search-ean" placeholder="np. 9788382651234" 
+                               class="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-inner"
+                               onkeypress="if(event.key === 'Enter') szukajImplementacja()">
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button onclick="szukajImplementacja()" class="bg-[#002f6c] text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-blue-800 transition-colors cursor-pointer flex items-center gap-2 border-0 shadow-sm">
                         <i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i> Wyszukaj produkt
                     </button>
                 </div>
@@ -130,7 +140,7 @@
                     <thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">
                         <tr>
                             <th class="p-3">Sklep</th>
-                            <th class="p-3">Nazwa artykułu</th>
+                            <th class="p-3">Wyszukiwana fraza</th>
                             <th class="p-3 text-right">Cena</th>
                             <th class="p-3 text-center">Oferta</th>
                             <th class="p-3 text-center">Raport</th>

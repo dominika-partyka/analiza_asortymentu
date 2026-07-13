@@ -1,5 +1,5 @@
 // ==========================================
-// 1. KONFIGURACJA I ZMIENNE GLOBALNE
+// 1. KONFIGURACJA SZEFA (SKLEPY PRZYPISANE W JS)
 // ==========================================
 const SKLEP_DOMENY = {
     "Biedronka": "biedronka.pl",
@@ -13,7 +13,13 @@ const SKLEP_DOMENY = {
     "Allegro": "allegro.pl"
 };
 
-// Mapowanie kolorów dla kafelków w panelu szczegółów
+// Tutaj na sztywno definiujemy sklepy, dzięki czemu zawsze wyświetlą się poprawnie!
+const SKLEPY_KATEGORII = {
+    "Książki": ["Empik", "Tania Książka", "Świat Książki", "Smyk"],
+    "Back to School": ["Biedronka", "Aldi", "Sinsay", "Action"],
+    "Zabawki": ["Smyk", "Allegro", "Empik"]
+};
+
 const KOLORY_KATEGORII = {
     "Książki": "bg-blue-600",
     "Back to School": "bg-yellow-500",
@@ -30,7 +36,7 @@ window.listaRaportu = [];
 document.addEventListener("DOMContentLoaded", () => {
     RenderujIkony();
     UstawDzisiejszaDate();
-    pokazEkranGlowny(); // Startujemy od ekranu głównego
+    pokazEkranGlowny();
     InicjalizujNaglowkiRaportu();
 });
 
@@ -62,34 +68,31 @@ function pokazEkranGlowny() {
     aktywneSklepyKategorii = [];
 }
 
-function wybierzKategorie(nazwaKategorii, ikona, sklepy) {
+function wybierzKategorie(nazwaKategorii, ikona) {
     aktywnaKategoria = nazwaKategorii;
-    aktywneSklepyKategorii = sklepy;
+    // Pobieranie sklepów prosto z naszej bezpiecznej mapy JS
+    aktywneSklepyKategorii = SKLEPY_KATEGORII[nazwaKategorii] || [];
 
-    // Przełączanie widoczności ekranów
     document.getElementById('ekran-glowny').classList.add('hidden');
     document.getElementById('ekran-kategorii').classList.remove('hidden');
 
-    // Aktualizacja badge'a na pasku nawigacji
     const badge = document.getElementById('current-category-badge');
     badge.innerText = nazwaKategorii;
     badge.classList.remove('hidden');
 
-    // Aktualizacja nagłówka i ikony w panelu filtrów
     document.getElementById('kat-title').innerText = nazwaKategorii;
     const iconBox = document.getElementById('kat-icon-box');
     
-    // Reset klas kolorystycznych i ustawienie właściwego koloru
     iconBox.className = `w-12 h-12 rounded-xl flex items-center justify-center text-white ${KOLORY_KATEGORII[nazwaKategorii] || 'bg-blue-600'}`;
-    iconBox.innerHTML = `<i data-lucide="${ikona}" class="w-6 h-6"></i>`;
+    iconBox.innerHTML = `<i data-lucide="${ikona || 'bookmark'}"></i>`;
 
-    // Czyszczenie poprzednich wyników wyszukiwania, by nie mylić użytkownika
+    // Czyszczenie pól i tabeli
     document.getElementById('wyniki-box').classList.add('hidden');
     document.getElementById('tabela-wynikow').innerHTML = '';
-    document.getElementById('search-input').value = '';
+    document.getElementById('search-title').value = '';
+    document.getElementById('search-ean').value = '';
 
-    // Dynamiczne generowanie checkboxów dla sklepów z danej kategorii
-    GenerujCheckboxySklepow(sklepy);
+    GenerujCheckboxySklepow(aktywneSklepyKategorii);
     RenderujIkony();
 }
 
@@ -108,44 +111,61 @@ function GenerujCheckboxySklepow(sklepy) {
     });
 }
 
-// Pobiera listę tylko ZAZNACZONYCH sklepów z filtrów
 function PobierzZaznaczoneSklepy() {
     const checkboxes = document.querySelectorAll('#sklepy-lista input[type="checkbox"]');
     const zaznaczone = [];
     checkboxes.forEach(cb => {
         if (cb.checked) zaznaczone.push(cb.value);
     });
-    // Jeśli użytkownik odznaczy wszystko, domyślnie bierzemy wszystkie dostępne dla kategorii
     return zaznaczone.length > 0 ? zaznaczone : aktywneSklepyKategorii;
 }
 
 // ==========================================
-// 4. WYSZUKIWANIE I LINKI DO SKLEPÓW
+// 4. DWUPOLOWA WYSZUKIWARKA (TYTUŁ + EAN)
 // ==========================================
 function szukajImplementacja() {
-    const queryInput = document.getElementById('search-input');
-    if (!queryInput) return;
+    const tytułInput = document.getElementById('search-title');
+    const eanInput = document.getElementById('search-ean');
     
-    const query = queryInput.value.trim();
-    const tabelaWynikow = document.getElementById('tabela-wynikow');
-    const wynikiBox = document.getElementById('wyniki-box');
+    const tytul = tytułInput ? tytułInput.value.trim() : "";
+    const ean = eanInput ? eanInput.value.trim() : "";
 
-    if (!query) {
-        alert('Wpisz nazwę poszukiwanego artykułu!');
+    if (!tytul && !ean) {
+        alert('Wprowadź Tytuł/Nazwę, kod EAN lub oba te parametry!');
         return;
     }
+
+    const wynikiBox = document.getElementById('wyniki-box');
+    const tabelaWynikow = document.getElementById('tabela-wynikow');
 
     wynikiBox.classList.remove('hidden');
     tabelaWynikow.innerHTML = '';
 
     const wybraneSklepy = PobierzZaznaczoneSklepy();
 
+    // Definiujemy, co przekazać do wyszukiwarki sklepu
+    let frazaDoWyswietlenia = "";
+    if (tytul && ean) frazaDoWyswietlenia = `${tytul} (EAN: ${ean})`;
+    else if (tytul) frazaDoWyswietlenia = tytul;
+    else frazaDoWyswietlenia = `EAN: ${ean}`;
+
     wybraneSklepy.forEach((sklep, index) => {
         const domena = SKLEP_DOMENY[sklep] || "google.com";
-        const encodedQuery = encodeURIComponent(query);
-
-        // Generowanie precyzyjnych linków wewnętrznych do wyszukiwarek sklepów
         let linkWeryfikacyjny = `https://${domena}`;
+
+        // Budowanie optymalnego zapytania dla danej konfiguracji pól
+        let queryStr = "";
+        if (tytul && ean) {
+            // Sklepy internetowe rzadko radzą sobie z jednoczesnym szukaniem tekstu i kodu w jednym polu.
+            // Strategia: szukamy po EAN, bo jest unikalny, a jeśli sklep go nie trawi, Google załatwi sprawę.
+            queryStr = ean; 
+        } else {
+            queryStr = tytul || ean;
+        }
+
+        const encodedQuery = encodeURIComponent(queryStr);
+
+        // Mapowanie linków bezpośrednich
         if (domena.includes('biedronka.pl')) linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodedQuery}`;
         else if (domena.includes('action.com')) linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodedQuery}`;
         else if (domena.includes('aldi.pl')) linkWeryfikacyjny = `https://www.aldi.pl/wyszukiwanie.html?q=${encodedQuery}`;
@@ -156,15 +176,24 @@ function szukajImplementacja() {
         else if (domena.includes('taniaksiazka.pl')) linkWeryfikacyjny = `https://www.taniaksiazka.pl/szukaj/zapytanie-${encodedQuery}`;
         else if (domena.includes('swiatksiazki.pl')) linkWeryfikacyjny = `https://www.swiatksiazki.pl/catalogsearch/result/?q=${encodedQuery}`;
 
+        // Jeśli szukamy po EAN (lub oba) a sklep to np. wspomniany Tantis czy inny wrażliwy system,
+        // Google z parametrem site: uratuje sytuację. Na tym etapie Smyk, Empik czy TaniaKsiążka świetnie łykają czysty EAN.
+        if (ean && !domena.includes('empik.com') && !domena.includes('taniaksiazka.pl') && !domena.includes('swiatksiazki.pl') && !domena.includes('smyk.com') && !domena.includes('allegro.pl')) {
+            linkWeryfikacyjny = `https://www.google.com/search?q=site:${domena}+${encodedQuery}`;
+        }
+
         const uniqueId = `cena-${index}`;
+
+        // Co ma zapisać się jako nazwa produktu w ostatecznym raporcie:
+        const ostatecznaNazwaRaportu = tytul ? tytul : `EAN: ${ean}`;
 
         const row = document.createElement('tr');
         row.className = "border-b border-gray-100 hover:bg-gray-50/80 transition-colors";
         row.innerHTML = `
             <td class="p-3 font-bold text-gray-700">${sklep}</td>
             <td class="p-3">
-                <div class="font-semibold text-gray-900">${query}</div>
-                <div class="text-xs text-gray-400 max-w-md truncate">Kliknij 'Otwórz sklep', aby sprawdzić realną cenę na stronie.</div>
+                <div class="font-semibold text-gray-900">${frazaDoWyswietlenia}</div>
+                <div class="text-xs text-gray-400 max-w-md truncate">Wyszukiwanie w oparciu o silnik domeny ${domena}</div>
             </td>
             <td class="p-3 text-right">
                 <div class="inline-flex items-center gap-1">
@@ -179,7 +208,7 @@ function szukajImplementacja() {
                 </a>
             </td>
             <td class="p-3 text-center">
-                <button onclick="ZatwierdzPozycje('${sklep}', '${uniqueId}')" 
+                <button onclick="ZatwierdzPozycje('${sklep}', '${uniqueId}', '${ostatecznaNazwaRaportu.replace(/'/g, "\\'")}')" 
                         class="bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all cursor-pointer border-0 flex items-center gap-1 mx-auto">
                     <i data-lucide="plus" class="w-3 h-3"></i> Uwzględnij
                 </button>
@@ -192,7 +221,7 @@ function szukajImplementacja() {
 }
 
 // ==========================================
-// 5. OBSŁUGA LISTY RAPORTU I USUWANIA POZYCJI
+// 5. OBSŁUGA LISTY RAPORTU ORAZ USUWANIA
 // ==========================================
 function InicjalizujNaglowkiRaportu() {
     const naglowek = document.getElementById('naglowek-tabeli-raportu');
@@ -208,8 +237,7 @@ function InicjalizujNaglowkiRaportu() {
     }
 }
 
-function ZatwierdzPozycje(sklep, inputId) {
-    const query = document.getElementById('search-input').value.trim();
+function ZatwierdzPozycje(sklep, inputId, domyslnaNazwa) {
     const cenaInput = document.getElementById(inputId);
     const cenaWpisana = parseFloat(cenaInput.value);
 
@@ -219,9 +247,7 @@ function ZatwierdzPozycje(sklep, inputId) {
     }
 
     const sformatowanaCena = cenaWpisana.toFixed(2).replace('.', ',') + ' zł';
-    WstrzyknijDoTabeliRaportu(sklep, query, sformatowanaCena);
-    
-    // Czyszczenie inputu po pomyślnym dodaniu
+    WstrzyknijDoTabeliRaportu(sklep, domyslnaNazwa, sformatowanaCena);
     cenaInput.value = '';
 }
 
@@ -278,7 +304,7 @@ function UsunZRaportu(id) {
 }
 
 // ==========================================
-// 6. EKSPORT DO EXCELA ORAZ KOPIOWANIE DO GOOGLE SHEETS (CTRL + V)
+// 6. EKSPORT DO EXCELA ORAZ GOOGLE SHEETS
 // ==========================================
 function eksportujDoXLSX() {
     if (window.listaRaportu.length === 0) {
@@ -286,17 +312,12 @@ function eksportujDoXLSX() {
         return;
     }
 
-    // 1. BUDOWANIE STRUKTURY TEKSTOWEJ POD SCHOWEK (Google Sheets format TSV)
-    // Nagłówki rozdzielone tabulatorami, linie rozdzielone znakiem nowej linii
     let tsvContent = "Data analizy\tKategoria\tSklep\tArtykuł / Produkt\tCena rynkowa\n";
-    
     window.listaRaportu.forEach(item => {
         tsvContent += `${item.data}\t${item.kategoria}\t${item.sklep}\t${item.produkt}\t${item.cena}\n`;
     });
 
-    // Kopiowanie do schowka systemowego
     navigator.clipboard.writeText(tsvContent).then(() => {
-        // 2. GENEROWANIE I POBIERANIE RÓWNOLEGLE PLIKU .XLSX ZA POMOCĄ SHEETJS
         const daneDoExcela = window.listaRaportu.map(item => ({
             "Data analizy": item.data,
             "Kategoria": item.kategoria,
@@ -309,16 +330,13 @@ function eksportujDoXLSX() {
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Analiza Cenowa");
 
-        // Formatowanie szerokości kolumn w pliku Excel
         worksheet['!cols'] = [{wch: 15}, {wch: 20}, {wch: 15}, {wch: 40}, {wch: 15}];
 
         const inputData = document.getElementById('data-analizy');
         const dataPliku = inputData && inputData.value ? inputData.value : "raport";
         
-        // Wywołanie pobierania pliku
         XLSX.writeFile(workbook, `Raport_Cenowy_${dataPliku}.xlsx`);
 
-        // 3. OTWARCIE CZYSTEGO ARKUSZA GOOGLE
         alert("Sukces!\n1. Pobrano plik Raportu w formacie XLSX.\n2. Dane tabeli skopiowano automatycznie do Twojego schowka!\n\nZostaniesz przeniesiony do Google Sheets. Kliknij dowolną komórkę i użyj Ctrl + V, aby wkleić dane.");
         window.open("https://sheets.new", "_blank");
         
@@ -328,7 +346,7 @@ function eksportujDoXLSX() {
     });
 }
 
-// Mapowanie funkcji globalnych pod atrybuty onclick z pliku HTML
+// Mapowanie pod kontekst globalny window
 window.pokazEkranGlowny = pokazEkranGlowny;
 window.wybierzKategorie = wybierzKategorie;
 window.szukajImplementacja = szukajImplementacja;
