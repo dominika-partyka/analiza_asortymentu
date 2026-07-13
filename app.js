@@ -152,7 +152,7 @@ function PobierzZaznaczoneSklepy() {
 }
 
 // ==========================================
-// 4. DOPASOWANA WYSZUKIWARKA (ODPORNA NA LITERÓWKI + MATEMATYKA BIEDRONKI)
+// 4. POPRAWNA WYSZUKIWARKA (1:1 MAPOWANIE SEKCJI BIEDRONKI + GAZETKI ALDI)
 // ==========================================
 function szukajImplementacja() {
     const tytulInput = document.getElementById('search-title');
@@ -197,7 +197,7 @@ function szukajImplementacja() {
         const encodedQuery = encodeURIComponent(queryStr);
         const queryWithPluses = encodeURIComponent(queryStr).replace(/%20/g, '+'); 
 
-        // Oczyszczony slug (małe litery, bez ogonków, myślniki zamiast spacji) - odporny na literówki
+        // Oczyszczony slug do mapowania (małe litery, bez ogonków, myślniki zamiast spacji)
         const queryCleanSlug = queryStr.toLowerCase()
             .replace(/ /g, '-')
             .replace(/[ąąáâãäå]/g, 'a')
@@ -211,19 +211,23 @@ function szukajImplementacja() {
 
         if (domena.includes('biedronka.pl')) {
             if (aktywnaKategoria === 'Back to School') {
-                // AUTOMATYCZNA MATEMATYKA DATY DLA BIEDRONKI
                 const poniedzialekDM = ObliczPoniedzialekBiedronki(dataWpisana);
+                let podrozdzial = "back-to-school"; // Fallback awaryjny
                 
-                // INTELIGENTNE I ODPORNE NA BŁĘDY MAPOWANIE PODROZDZIAŁÓW (STEMMING RDZENIA)
-                let podrozdzial = "back-to-school"; // Fallback ogólny kampanii
-                
+                // POPRAWIONE MAPOWANIE PODROZDZIAŁÓW ZGODNIE Z REALNĄ STRUKTURĄ SERWERA:
                 if (/zesz|not|papi|brul|oxf|herl/i.test(queryCleanSlug)) {
                     podrozdzial = "zeszyty-papiery-notesy";
-                } else if (/dlu|dłu|pior|piór|olow|ołów|kred|pisa|gumk|nozy|noży|biur|cyrk|lini/i.test(queryCleanSlug)) {
-                    podrozdzial = "artykuly-pismiennicze-i-biurowe";
-                } else if (/plec|torb|work|torn/i.test(queryCleanSlug)) {
-                    podrozdzial = "plecaki-i-torby-szkolne";
-                } else if (/ksia|ksią|podr|slown|słown/i.test(queryCleanSlug)) {
+                } 
+                else if (/dlu|dłu|klej|nozy|noży|zakr|zakre|olow|ołów|lini|cyrk/i.test(queryCleanSlug)) {
+                    podrozdzial = "przybory-szkolne";
+                } 
+                else if (/plec|pior|piór|torb|work|torn/i.test(queryCleanSlug)) {
+                    podrozdzial = "plecaki-piorniki";
+                } 
+                else if (/farb|blok|plast|kred|mode|pedz|pędz|wyci/i.test(queryCleanSlug)) {
+                    podrozdzial = "artykuly-plastyczne";
+                } 
+                else if (/ksia|ksią|podr|slown|słown/i.test(queryCleanSlug)) {
                     podrozdzial = "ksiazki-i-podreczniki";
                 }
                 
@@ -236,7 +240,12 @@ function szukajImplementacja() {
             linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodedQuery}`;
         }
         else if (domena.includes('aldi.pl')) {
-            linkWeryfikacyjny = `https://www.aldi.pl/wyszukiwanie.html?q=${encodedQuery}`;
+            // ZMIANA: W dziale Back to School odsyła bezpośrednio na stronę ich gazetek
+            if (aktywnaKategoria === 'Back to School') {
+                linkWeryfikacyjny = `https://www.aldi.pl/gazetki.html`;
+            } else {
+                linkWeryfikacyjny = `https://www.aldi.pl/wyszukiwanie.html?q=${encodedQuery}`;
+            }
         }
         else if (domena.includes('sinsay.com')) {
             linkWeryfikacyjny = `https://www.sinsay.com/pl/pl/catalogsearch/result/?q=${encodedQuery}`;
