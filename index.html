@@ -10,6 +10,7 @@
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans pt-16">
 
+    <!-- PASEK NAWIGACYJNY -->
     <nav class="bg-[#002f6c] text-white shadow-md px-6 py-3 fixed top-0 left-0 right-0 z-50">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             
@@ -26,7 +27,7 @@
                         class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1">
                     <i data-lucide="book-open" class="w-4 h-4 text-blue-300"></i> <span class="hidden sm:inline">Książki</span>
                 </button>
-                <button onclick="wybierzKategorie('Back to School', 'graduation-cap', ['Biedronka', 'Action', 'Smyk', 'Empik'])" 
+                <button onclick="wybierzKategorie('Back to School', 'graduation-cap', ['Biedronka', 'Aldi', 'Sinsay', 'Action'])" 
                         class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1">
                     <i data-lucide="graduation-cap" class="w-4 h-4 text-yellow-300"></i> <span class="hidden sm:inline">Back to School</span>
                 </button>
@@ -35,12 +36,13 @@
                     <i data-lucide="dribbble" class="w-4 h-4 text-pink-300"></i> <span class="hidden sm:inline">Zabawki</span>
                 </button>
                 <div class="h-5 w-px bg-blue-800 mx-1 hidden sm:block"></div>
-                <span id="current-category-badge" class="hidden text-xs bg-yellow-400 text-blue-950 px-2.5 py-1 rounded-md font-bold animate-pulse"></span>
+                <span id="current-category-badge" class="hidden text-xs bg-yellow-400 text-blue-950 px-2.5 py-1 rounded-md font-bold"></span>
             </div>
 
         </div>
     </nav>
 
+    <!-- EKRAN GŁÓWNY (KAFELKI) -->
     <div id="ekran-glowny" class="max-w-5xl mx-auto px-6 py-12">
         <div class="text-center mb-12 anim-fade-in">
             <h2 class="text-3xl font-black text-gray-800 tracking-tight">Cześć! Co dzisiaj analizujemy?</h2>
@@ -48,8 +50,9 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Kafel Książki -->
             <div onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki'])" 
-                 class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center del-1">
+                 class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
                 <div class="w-16 h-16 bg-blue-50 text-[#002f6c] rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                     <i data-lucide="book-open" class="w-8 h-8"></i>
                 </div>
@@ -57,17 +60,19 @@
                 <p class="text-gray-500 text-sm">Wyszukiwanie po tytule, autorze lub kodzie EAN/ISBN w księgarniach internetowych.</p>
             </div>
 
-            <div onclick="wybierzKategorie('Back to School', 'graduation-cap', ['Biedronka', 'Action', 'Smyk', 'Empik'])" 
-                 class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center del-2">
+            <!-- Kafel Back to School -->
+            <div onclick="wybierzKategorie('Back to School', 'graduation-cap', ['Biedronka', 'Aldi', 'Sinsay', 'Action'])" 
+                 class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
                 <div class="w-16 h-16 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-yellow-500 group-hover:text-white transition-colors">
                     <i data-lucide="graduation-cap" class="w-8 h-8"></i>
                 </div>
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Back to School</h3>
-                <p class="text-gray-500 text-sm">Analiza sezonowych artykułów szkolnych, artykułów papierniczych i e-gazetek.</p>
+                <p class="text-gray-500 text-sm">Analiza sezonowych artykułów szkolnych, artykułów papierniczych i odzieży w Biedronka, Aldi, Sinsay, Action.</p>
             </div>
 
+            <!-- Kafel Zabawki -->
             <div onclick="wybierzKategorie('Zabawki', 'dribbble', ['Smyk', 'Allegro', 'Empik'])" 
-                 class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center del-3">
+                 class="kafel group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
                 <div class="w-16 h-16 bg-pink-50 text-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-pink-500 group-hover:text-white transition-colors">
                     <i data-lucide="dribbble" class="w-8 h-8"></i>
                 </div>
@@ -77,11 +82,13 @@
         </div>
     </div>
 
+    <!-- EKRAN SZCZEGÓŁÓW KATEGORII -->
     <div id="ekran-kategorii" class="hidden max-w-4xl mx-auto px-6 py-10">
         <button onclick="pokazEkranGlowny()" class="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 mb-6 transition-colors cursor-pointer">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> Powrót do menu głównego
         </button>
 
+        <!-- PANEL FILTRÓW I WYSZUKIWARKI -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 anim-fade-in">
             <div class="flex items-center gap-4 border-b border-gray-100 pb-4 mb-6">
                 <div id="kat-icon-box" class="w-12 h-12 rounded-xl flex items-center justify-center text-white"></div>
@@ -102,26 +109,53 @@
                 </div>
             </div>
 
+            <!-- NAPRAWIONY PAS WYSZUKIWANIA (STABILNE PISANIE) -->
             <div class="space-y-2">
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Wpisz produkt lub cechę (AI dopasuje synonimy):</label>
-                <div class="border border-gray-200 rounded-xl p-2 bg-gray-50/50">
-                    <script async src="https://cse.google.com/cse.js?cx=1cdcf117b9b234479"></script>
-                    <div class="gcse-search"></div>
+                <label for="search-input" class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Wpisz szukany produkt:</label>
+                <div class="flex gap-2">
+                    <input type="text" id="search-input" placeholder="Np. zeszyt A5, kredki świecowe, klocki..." 
+                           class="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none shadow-inner">
+                    <button onclick="uruchomWyszukiwanie()" class="bg-[#002f6c] text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-800 transition-colors cursor-pointer flex items-center gap-2">
+                        <i data-lucide="search" class="w-4 h-4"></i> Szukaj
+                    </button>
                 </div>
             </div>
         </div>
 
+        <!-- SEKCJA ASYSTENTA SYSTEMU FOCUS (NOWOŚĆ!) -->
+        <div class="bg-amber-50 rounded-2xl border border-amber-200 p-6 mb-6 anim-fade-in">
+            <h3 class="text-sm font-bold text-amber-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <i data-lucide="info" class="w-4 h-4 text-amber-700"></i> 🔎 Ściągawka filtrów dla systemu FOCUS
+            </h3>
+            <p class="text-xs text-amber-800 mb-4">Uruchom aplikację FOCUS w osobnej karcie i ustaw poniższe parametry, aby szybko zweryfikować dane:</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div class="bg-white/80 p-3 rounded-xl border border-amber-100">
+                    <span class="font-bold text-gray-500 block mb-1">Poziom kategoryzacji:</span>
+                    <span id="focus-poziom" class="font-semibold text-gray-800">Grupa Towarowa</span>
+                </div>
+                <div class="bg-white/80 p-3 rounded-xl border border-amber-100">
+                    <span class="font-bold text-gray-500 block mb-1">Grupa Towarowa:</span>
+                    <span id="focus-grupa" class="font-bold text-blue-900">Ładowanie...</span>
+                </div>
+                <div class="bg-white/80 p-3 rounded-xl border border-amber-100">
+                    <span class="font-bold text-gray-500 block mb-1">Podział Rynku / Organizacja:</span>
+                    <span class="font-semibold text-gray-800">Artykuły Przemysłowe (Non-Food)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SYMULATOR CENY -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 anim-fade-in">
             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
                 <i data-lucide="calculator" class="w-4 h-4 text-blue-600"></i> Symulator Ceny w Lidlu
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">Najniższa znaleziona cena (zł)</label>
+                    <label for="min-price" class="block text-xs text-gray-500 mb-1">Najniższa znaleziona cena (zł)</label>
                     <input type="number" id="min-price" class="w-full rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="0.00" oninput="obliczCene()">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">Poziom niedowartościowania (%)</label>
+                    <label for="discount-percent" class="block text-xs text-gray-500 mb-1">Poziom niedowartościowania (%)</label>
                     <input type="number" id="discount-percent" value="5" class="w-full rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="obliczCene()">
                 </div>
                 <div class="bg-[#002f6c]/5 p-4 rounded-xl border border-[#002f6c]/10 text-center">
@@ -133,7 +167,7 @@
     </div>
 
     <footer class="text-center text-xs text-gray-400 my-12">
-        Narzędzie wewnętrzne przygotowane w ramach programu stażowego. Integracja z silnikiem wyszukiwania Google Programmable Search.
+        Narzędzie wewnętrzne przygotowane w ramach programu stażowego. Integracja ze zoptymalizowanym silnikiem zapytań.
     </footer>
 
     <script src="app.js"></script>

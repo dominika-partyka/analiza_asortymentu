@@ -1,91 +1,107 @@
-// Inicjalizacja ikon Lucide po starcie strony
+// Inicjalizacja ikonek Lucide
 lucide.createIcons();
 
-// Automatyczne wstawienie dzisiejszej daty do kalendarza
-document.getElementById('data-analizy').valueAsDate = new Date();
-
-/**
- * Główna funkcja nawigacyjna - przełącza widok na wybraną kategorię
- */
+// Funkcja przełączania kategorii
 function wybierzKategorie(nazwa, ikona, sklepy) {
-    // Ukrywamy ekran główny, pokazujemy panel kategorii
     document.getElementById('ekran-glowny').classList.add('hidden');
     document.getElementById('ekran-kategorii').classList.remove('hidden');
     
-    // Aktualizacja tytułów i odznaki w menu
+    // Aktualizacja nagłówków i odznaki
     document.getElementById('kat-title').innerText = nazwa;
     const badge = document.getElementById('current-category-badge');
-    badge.innerText = nazwa.toUpperCase();
+    badge.innerText = nazwa;
     badge.classList.remove('hidden');
-
-    // Dynamiczna stylizacja boksu z ikoną
+    
+    // Ustawienie koloru ikony w zależności od kategorii
     const iconBox = document.getElementById('kat-icon-box');
     iconBox.innerHTML = `<i data-lucide="${ikona}" class="w-6 h-6"></i>`;
     
     if(nazwa === 'Książki') iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center text-white bg-blue-600";
     if(nazwa === 'Back to School') iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center text-white bg-yellow-500";
     if(nazwa === 'Zabawki') iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center text-white bg-pink-500";
+    
+    // Dynamiczna zmiana podpowiedzi dla systemu FOCUS
+    const focusGrupa = document.getElementById('focus-grupa');
+    if(nazwa === 'Książki') focusGrupa.innerText = "KULTURA I ROZRYWKA / KSIĄŻKI";
+    if(nazwa === 'Back to School') focusGrupa.innerText = "ART. PAPIERNICZE / SZKOLNE";
+    if(nazwa === 'Zabawki') focusGrupa.innerText = "ZABAWKI I GRY SEZONOWE";
 
-    // Generowanie specyficznych checkboxów ze sklepami dla danej kategorii
-    const sklepyKontener = document.getElementById('sklepy-lista');
-    sklepyKontener.innerHTML = '';
+    // Generowanie checkboxów dla sklepów
+    const sklepyLista = document.getElementById('sklepy-lista');
+    sklepyLista.innerHTML = '';
     sklepy.forEach(sklep => {
-        sklepyKontener.innerHTML += `
-            <label class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 cursor-pointer transition-colors border border-gray-200">
-                <input type="checkbox" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                ${sklep}
+        sklepyLista.innerHTML += `
+            <label class="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors text-gray-700">
+                <input type="checkbox" checked class="rounded text-blue-600 focus:ring-blue-500">
+                <span>${sklep}</span>
             </label>
         `;
     });
-
-    // Podświetlanie odpowiedniego linku w pasku górnym (Navbarze)
-    oznaczAktywnyLink(nazwa);
-
-    // Przeładowanie ikon biblioteki Lucide, by obsłużyć nowe elementy na ekranie
-    lucide.createIcons();
     
-    // Reset symulatora cenowego przy zmianie kategorii
+    // Reset pola wyszukiwania i kalkulatora
+    document.getElementById('search-input').value = '';
     document.getElementById('min-price').value = '';
-    document.getElementById('target-price').innerText = "0.00 zł";
+    document.getElementById('target-price').innerText = '0.00 zł';
+    
+    lucide.createIcons();
 }
 
-/**
- * Resetuje widok i przenosi użytkownika z powrotem na pulpit (ekran główny)
- */
 function pokazEkranGlowny() {
     document.getElementById('ekran-kategorii').classList.add('hidden');
     document.getElementById('ekran-glowny').classList.remove('hidden');
     document.getElementById('current-category-badge').classList.add('hidden');
-    
-    // Usuwamy podświetlenie z linków w menu górnym
-    oznaczAktywnyLink(null);
 }
 
-/**
- * Zarządza klasami CSS, aby podświetlić aktywną kategorię na pasku górnym
- */
-function oznaczAktywnyLink(aktywnaNazwa) {
-    const linki = document.querySelectorAll('.nav-link');
-    linki.forEach(link => {
-        if (link.innerText.trim() === aktywnaNazwa) {
-            link.classList.add('nav-link-active');
-        } else {
-            link.classList.remove('nav-link-active');
-        }
+// Funkcja odpowiedzialna za bezpieczne wyszukiwanie
+function uruchomWyszukiwanie() {
+    const produkt = document.getElementById('search-input').value.trim();
+    const kategoria = document.getElementById('kat-title').innerText;
+    
+    if (!produkt) {
+        alert('Wpisz najpierw nazwę produktu!');
+        return;
+    }
+    
+    // Pobieramy zaznaczone sklepy konkurencji
+    const checkboxy = document.querySelectorAll('#sklepy-lista input:checked');
+    let wybraneSklepy = [];
+    checkboxy.forEach(cb => {
+        wybraneSklepy.push(cb.nextElementSibling.innerText);
     });
+    
+    // Budujemy zapytanie do Google z operatorami site:
+    let query = produkt;
+    if (wybraneSklepy.length > 0) {
+        query += " (";
+        const siteQueries = wybraneSklepy.map(sklep => {
+            if(sklep.toLowerCase() === 'biedronka') return 'site:biedronka.pl';
+            if(sklep.toLowerCase() === 'aldi') return 'site:aldi.pl';
+            if(sklep.toLowerCase() === 'sinsay') return 'site:sinsay.com';
+            if(sklep.toLowerCase() === 'action') return 'site:action.com';
+            if(sklep.toLowerCase() === 'empik') return 'site:empik.com';
+            if(sklep.toLowerCase() === 'tania książka') return 'site:taniaksiazka.pl';
+            if(sklep.toLowerCase() === 'świat książki') return 'site:swiatksiazki.pl';
+            if(sklep.toLowerCase() === 'smyk') return 'site:smyk.com';
+            if(sklep.toLowerCase() === 'allegro') return 'site:allegro.pl';
+            return `intitle:${sklep}`;
+        });
+        query += siteQueries.join(" OR ") + ")";
+    }
+    
+    // Otwieramy czyste wyszukiwanie w nowej karcie Google
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    window.open(url, '_blank');
 }
 
-/**
- * Logika działania symulatora cenowego dla Lidla
- */
+// Funkcja kalkulatora
 function obliczCene() {
-    const minPrice = parseFloat(document.getElementById('min-price').value) || 0;
-    const discount = parseFloat(document.getElementById('discount-percent').value) || 0;
+    const minPrice = parseFloat(document.getElementById('min-price').value);
+    const discountPercent = parseFloat(document.getElementById('discount-percent').value);
     
-    if (minPrice > 0) {
-        const finalPrice = minPrice * (1 - (discount / 100));
-        document.getElementById('target-price').innerText = finalPrice.toFixed(2) + " zł";
+    if (!isNaN(minPrice) && !isNaN(discountPercent)) {
+        const targetPrice = minPrice * (1 - (discountPercent / 100));
+        document.getElementById('target-price').innerText = `${targetPrice.toFixed(2)} zł`;
     } else {
-        document.getElementById('target-price').innerText = "0.00 zł";
+        document.getElementById('target-price').innerText = '0.00 zł';
     }
 }
