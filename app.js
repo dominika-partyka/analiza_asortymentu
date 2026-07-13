@@ -134,7 +134,7 @@ function PobierzZaznaczoneSklepy() {
     return zaznaczone.length > 0 ? zaznaczone : aktywneSklepyKategorii;
 }
 // ==========================================
-// 4. PERFEKCYJNIE DOPASOWANA WYSZUKIWARKA (ZMIANA: "OTWÓRZ LINK")
+// 4. PERFEKCYJNIE DOPASOWANA WYSZUKIWARKA (SMYK I TANTIS 1:1 BEZ PROCENTÓW)
 // ==========================================
 function szukajImplementacja() {
     const tytulInput = document.getElementById('search-title');
@@ -174,10 +174,11 @@ function szukajImplementacja() {
 
         let queryStr = ean ? `${tytul} ${ean}` : tytul;
         
-        const encodedQueryLower = encodeURIComponent(queryStr.toLowerCase()); 
+        const encodedQuery = encodeURIComponent(queryStr);
         const queryWithPluses = encodeURIComponent(queryStr).replace(/%20/g, '+'); 
 
-        const queryForTantis = queryStr.toLowerCase()
+        // UNIWERSALNA KONWERSJA NA PRZYJAZNY ADRES (Wymuszone małe litery, myślniki zamiast spacji, brak polskich ogonków)
+        const queryCleanSlug = queryStr.toLowerCase()
             .replace(/ /g, '-')
             .replace(/[ąąáâãäå]/g, 'a')
             .replace(/[ęèéêë]/g, 'e')
@@ -189,31 +190,32 @@ function szukajImplementacja() {
             .replace(/[ń]/g, 'n');
 
         if (domena.includes('biedronka.pl')) {
-            linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodeURIComponent(queryStr)}`;
+            linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodedQuery}`;
         }
         else if (domena.includes('action.com')) {
-            linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodeURIComponent(queryStr)}`;
+            linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodedQuery}`;
         }
         else if (domena.includes('aldi.pl')) {
-            linkWeryfikacyjny = `https://www.aldi.pl/wyszukiwanie.html?q=${encodeURIComponent(queryStr)}`;
+            linkWeryfikacyjny = `https://www.aldi.pl/wyszukiwanie.html?q=${encodedQuery}`;
         }
         else if (domena.includes('sinsay.com')) {
-            linkWeryfikacyjny = `https://www.sinsay.com/pl/pl/catalogsearch/result/?q=${encodeURIComponent(queryStr)}`;
+            linkWeryfikacyjny = `https://www.sinsay.com/pl/pl/catalogsearch/result/?q=${encodedQuery}`;
         }
         else if (domena.includes('empik.com')) {
-            linkWeryfikacyjny = `https://www.empik.com/szukaj/produkt?q=${encodeURIComponent(queryStr)}`;
+            linkWeryfikacyjny = `https://www.empik.com/szukaj/produkt?q=${encodedQuery}`;
         }
         else if (domena.includes('allgro.pl') || domena.includes('allegro.pl')) {
-            linkWeryfikacyjny = `https://allegro.pl/listing?string=${encodeURIComponent(queryStr)}`;
+            linkWeryfikacyjny = `https://allegro.pl/listing?string=${encodedQuery}`;
         }
         else if (domena.includes('taniaksiazka.pl')) {
             linkWeryfikacyjny = `https://www.taniaksiazka.pl/szukaj?q=${queryWithPluses}`;
         }
         else if (domena.includes('tantis.pl')) {
-            linkWeryfikacyjny = `https://tantis.pl/szukaj/${queryForTantis}`;
+            linkWeryfikacyjny = `https://tantis.pl/szukaj/${queryCleanSlug}`;
         }
         else if (domena.includes('smyk.com')) {
-            linkWeryfikacyjny = `https://www.smyk.com/pl/pl/szukaj.html?q=${encodedQueryLower}`;
+            // ODWZOROWANIE 1:1 DLA SMYKA - Przekierowanie na przyjazną strukturę katalogu "/pl/pl/p/nazwa-produktu" bez procentów
+            linkWeryfikacyjny = `https://www.smyk.com/pl/pl/p/${queryCleanSlug}`;
         }
 
         mapowanieLinkowBiezegoWyszukania[sklep] = linkWeryfikacyjny;
@@ -233,7 +235,6 @@ function szukajImplementacja() {
             `;
         }
 
-        // POPRAWKA: Słowo "silnik" zmienione na "link" w elemencie <a> poniżej
         htmlZawartosc += `
             <td class="p-3 align-middle">
                 <div class="flex items-center justify-between gap-4">
