@@ -152,7 +152,7 @@ function PobierzZaznaczoneSklepy() {
 }
 
 // ==========================================
-// 4. POPRAWNA WYSZUKIWARKA (1:1 MAPOWANIE SEKCJI BIEDRONKI + GAZETKI ALDI)
+// 4. PERFEKCYJNIE DOPASOWANA WYSZUKIWARKA (ZABAWKI SMYK -> CZYSTE GOOGLE)
 // ==========================================
 function szukajImplementacja() {
     const tytulInput = document.getElementById('search-title');
@@ -197,7 +197,6 @@ function szukajImplementacja() {
         const encodedQuery = encodeURIComponent(queryStr);
         const queryWithPluses = encodeURIComponent(queryStr).replace(/%20/g, '+'); 
 
-        // Oczyszczony slug do mapowania (małe litery, bez ogonków, myślniki zamiast spacji)
         const queryCleanSlug = queryStr.toLowerCase()
             .replace(/ /g, '-')
             .replace(/[ąąáâãäå]/g, 'a')
@@ -212,22 +211,17 @@ function szukajImplementacja() {
         if (domena.includes('biedronka.pl')) {
             if (aktywnaKategoria === 'Back to School') {
                 const poniedzialekDM = ObliczPoniedzialekBiedronki(dataWpisana);
-                let podrozdzial = "back-to-school"; // Fallback awaryjny
+                let podrozdzial = "back-to-school"; 
                 
-                // POPRAWIONE MAPOWANIE PODROZDZIAŁÓW ZGODNIE Z REALNĄ STRUKTURĄ SERWERA:
                 if (/zesz|not|papi|brul|oxf|herl/i.test(queryCleanSlug)) {
                     podrozdzial = "zeszyty-papiery-notesy";
-                } 
-                else if (/dlu|dłu|klej|nozy|noży|zakr|zakre|olow|ołów|lini|cyrk/i.test(queryCleanSlug)) {
+                } else if (/dlu|dłu|klej|nozy|noży|zakr|zakre|olow|ołów|lini|cyrk/i.test(queryCleanSlug)) {
                     podrozdzial = "przybory-szkolne";
-                } 
-                else if (/plec|pior|piór|torb|work|torn/i.test(queryCleanSlug)) {
+                } else if (/plec|pior|piór|torb|work|torn/i.test(queryCleanSlug)) {
                     podrozdzial = "plecaki-piorniki";
-                } 
-                else if (/farb|blok|plast|kred|mode|pedz|pędz|wyci/i.test(queryCleanSlug)) {
+                } else if (/farb|blok|plast|kred|mode|pedz|pędz|wyci/i.test(queryCleanSlug)) {
                     podrozdzial = "artykuly-plastyczne";
-                } 
-                else if (/ksia|ksią|podr|slown|słown/i.test(queryCleanSlug)) {
+                } else if (/ksia|ksią|podr|slown|słown/i.test(queryCleanSlug)) {
                     podrozdzial = "ksiazki-i-podreczniki";
                 }
                 
@@ -240,7 +234,6 @@ function szukajImplementacja() {
             linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodedQuery}`;
         }
         else if (domena.includes('aldi.pl')) {
-            // ZMIANA: W dziale Back to School odsyła bezpośrednio na stronę ich gazetek
             if (aktywnaKategoria === 'Back to School') {
                 linkWeryfikacyjny = `https://www.aldi.pl/gazetki.html`;
             } else {
@@ -263,7 +256,12 @@ function szukajImplementacja() {
             linkWeryfikacyjny = `https://tantis.pl/szukaj/${queryCleanSlug}`;
         }
         else if (domena.includes('smyk.com')) {
-            linkWeryfikacyjny = `https://www.smyk.com/pl/pl/p/${queryCleanSlug}`;
+            // STRATEGIA DLA SMYKA: W zabawkach szuka przez czyste Google z frazą "nazwa smyk", w innych działach standardowo
+            if (aktywnaKategoria === 'Zabawki') {
+                linkWeryfikacyjny = `https://www.google.com/search?q=${encodeURIComponent(queryStr)}+smyk`;
+            } else {
+                linkWeryfikacyjny = `https://www.smyk.com/pl/pl/p/${queryCleanSlug}`;
+            }
         }
 
         mapowanieLinkowBiezegoWyszukania[sklep] = linkWeryfikacyjny;
