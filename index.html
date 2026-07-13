@@ -143,15 +143,20 @@
                             <th class="p-3">Wyszukiwana fraza</th>
                             <th class="p-3 text-right">Cena</th>
                             <th class="p-3 text-center">Oferta</th>
-                            <th class="p-3 text-center">Raport</th>
                         </tr>
                     </thead>
                     <tbody id="tabela-wynikow"></tbody>
                 </table>
             </div>
+            <!-- POJEDYNCZY PRZYCISK UWZGLĘDNIENIA CAŁOŚCI -->
+            <div class="flex justify-end mt-4 border-t border-gray-100 pt-4">
+                <button onclick="ZatwierdzMatiXDoRaportu()" class="bg-gray-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all cursor-pointer border-0 flex items-center gap-2 shadow-sm">
+                    <i data-lucide="folder-plus" class="w-4 h-4 text-green-400"></i> Uwzględnij i dodaj do raportu zbiorczego
+                </button>
+            </div>
         </div>
 
-        <!-- ZBIORCZA LISTA DO EKSPORTU (MACIERZOWA) -->
+        <!-- ZBIORCZA LISTA DO EKSPORTU -->
         <div id="raport-box" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-4 mb-4">
                 <div>
