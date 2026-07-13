@@ -1,13 +1,34 @@
-// Inicjalizacja ikonek Lucide
+// Inicjalizacja ikonek
 lucide.createIcons();
+
+// LOKALNA BAZA DANYCH GAZETEK KONKURENCJI (Działa natychmiastowo!)
+const BAZA_GAZETEK = [
+    // --- BACK TO SCHOOL ---
+    { kategoria: "Back to School", sklep: "Biedronka", produkt: "Zeszyt A5 60 kartek w linię / kratkę", cena: 2.99 },
+    { kategoria: "Back to School", sklep: "Biedronka", produkt: "Kredki świecowe Bambino 24 kolory", cena: 11.49 },
+    { kategoria: "Back to School", sklep: "Aldi", produkt: "Zeszyt A5 60 kartek Oxford", cena: 3.49 },
+    { kategoria: "Back to School", sklep: "Aldi", produkt: "Piórnik tuba Milan z wyposażeniem", cena: 24.99 },
+    { kategoria: "Back to School", sklep: "Action", produkt: "Kredki ołówkowe w metalowym etui 50 szt", cena: 9.99 },
+    { kategoria: "Back to School", sklep: "Action", produkt: "Zeszyt szkolny A5 32 kartki", cena: 0.99 },
+    { kategoria: "Back to School", sklep: "Sinsay", produkt: "Piórnik szkolny z organizerem z nadrukiem", cena: 15.99 },
+    { kategoria: "Back to School", sklep: "Sinsay", produkt: "Plecak szkolny klasyczny pastelowy", cena: 39.99 },
+
+    // --- KSIĄŻKI ---
+    { kategoria: "Książki", sklep: "Empik", produkt: "Wiedźmin: Ostatnie życzenie - Andrzej Sapkowski", cena: 34.90 },
+    { kategoria: "Książki", sklep: "Tania Książka", produkt: "Wiedźmin: Ostatnie życzenie - Andrzej Sapkowski", cena: 29.80 },
+    { kategoria: "Książki", sklep: "Świat Książki", produkt: "Mały Książę - wydanie ilustrowane", cena: 19.99 },
+
+    // --- ZABAWKI ---
+    { kategoria: "Zabawki", sklep: "Smyk", produkt: "Klocki LEGO Technic - Samochód wyścigowy", cena: 45.99 },
+    { kategoria: "Zabawki", sklep: "Allegro", produkt: "Gra planszowa Monopoly Classic", cena: 99.00 },
+    { kategoria: "Zabawki", sklep: "Empik", produkt: "Gra planszowa Monopoly Classic", cena: 109.00 }
+];
 
 // Funkcja przełączania kategorii
 function wybierzKategorie(nazwa, ikona, sklepy) {
     document.getElementById('ekran-glowny').classList.add('hidden');
     document.getElementById('ekran-kategorii').classList.remove('hidden');
-    
-    // Ukrywamy stare wyniki wyszukiwania
-    document.getElementById('google-results-box').classList.add('hidden');
+    document.getElementById('wyniki-box').classList.add('hidden'); // Ukryj starą tabelę
     
     document.getElementById('kat-title').innerText = nazwa;
     const badge = document.getElementById('current-category-badge');
@@ -21,20 +42,17 @@ function wybierzKategorie(nazwa, ikona, sklepy) {
     if(nazwa === 'Back to School') iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center text-white bg-yellow-500";
     if(nazwa === 'Zabawki') iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center text-white bg-pink-500";
     
-    // USTAWIANIE DOMYŚLNEJ DZISIEJSZEJ DATY
+    // Ustawienie dzisiejszej daty
     const dzis = new Date();
-    const rok = dzis.getFullYear();
-    const miesiac = String(dzis.getMonth() + 1).padStart(2, '0');
-    const dzien = String(dzis.getDate()).padStart(2, '0');
-    document.getElementById('data-analizy').value = `${rok}-${miesiac}-${dzien}`;
+    document.getElementById('data-analizy').value = `${dzis.getFullYear()}-${String(dzis.getMonth() + 1).padStart(2, '0')}-${String(dzis.getDate()).padStart(2, '0')}`;
 
-    // Generowanie nowych checkboxów dla sklepów
+    // Filtry sklepów
     const sklepyLista = document.getElementById('sklepy-lista');
     sklepyLista.innerHTML = '';
     sklepy.forEach(sklep => {
         sklepyLista.innerHTML += `
             <label class="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors text-gray-700">
-                <input type="checkbox" checked class="rounded text-blue-600 focus:ring-blue-500">
+                <input type="checkbox" checked value="${sklep}" class="rounded text-blue-600 focus:ring-blue-500">
                 <span>${sklep}</span>
             </label>
         `;
@@ -53,64 +71,64 @@ function pokazEkranGlowny() {
     document.getElementById('current-category-badge').classList.add('hidden');
 }
 
-// WYSZUKIWANIE WEWNĘTRZNE W PANELU
-function uruchomWyszukiwanieWewnetrzne() {
-    const produkt = document.getElementById('search-input').value.trim();
+// BŁYSKAWICZNE PRZESZUKIWANIE BAZY
+function szukajWBazieGazetek() {
+    const fraza = document.getElementById('search-input').value.trim().toLowerCase();
+    const aktualnaKategoria = document.getElementById('kat-title').innerText;
     
-    if (!produkt) {
-        alert('Wpisz najpierw nazwę produktu!');
+    if (!fraza) {
+        alert('Wpisz nazwę szukanego produktu!');
         return;
     }
     
-    const checkboxy = document.querySelectorAll('#sklepy-lista input:checked');
-    let wybraneSklepy = [];
-    checkboxy.forEach(cb => {
-        wybraneSklepy.push(cb.nextElementSibling.innerText);
+    // Pobierz tylko aktywne (zaznaczone) sklepy
+    const zaznaczoneSklepy = Array.from(document.querySelectorAll('#sklepy-lista input:checked')).map(cb => cb.value);
+    
+    // Filtrowanie bazy w ułamku sekundy
+    const znalezione = BAZA_GAZETEK.filter(item => {
+        const należyDoKategorii = (item.kategoria === aktualnaKategoria);
+        const pasujeDoSklepu = zaznaczoneSklepy.includes(item.sklep);
+        const pasujeDoFrazy = item.produkt.toLowerCase().includes(fraza);
+        return należyDoKategorii && pasujeDoSklepu && pasujeDoFrazy;
     });
     
-    let query = produkt;
-    if (wybraneSklepy.length > 0) {
-        const sklepyQuery = wybraneSklepy.map(s => s.toLowerCase()).join(" OR ");
-        query += ` (${sklepyQuery})`;
+    const wynikiBox = document.getElementById('wyniki-box');
+    const tabelaTbody = document.getElementById('tabela-wynikow');
+    
+    wynikiBox.classList.remove('hidden');
+    tabelaTbody.innerHTML = '';
+    
+    if (znalezione.length === 0) {
+        tabelaTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400 text-sm">Brak ofert pasujących do frazy "${fraza}" w zaznaczonych sklepach.</td></tr>`;
+        return;
     }
     
-    const resultsBox = document.getElementById('google-results-box');
-    const insideResults = document.getElementById('inside-results');
-    resultsBox.classList.remove('hidden');
-    
-    insideResults.innerHTML = `
-        <div class="flex flex-col items-center gap-3 p-4">
-            <p class="text-sm text-gray-500 animate-pulse">🔎 Przeszukuję bazy konkurencji (Biedronka, Aldi, Action, Sinsay)... to zajmie tylko chwilę.</p>
-            <button onclick="zatrzymajWyszukiwanie()" class="bg-red-600 text-white px-4 py-1.5 rounded-lg font-bold text-xs hover:bg-red-700 transition-colors cursor-pointer flex items-center gap-1 shadow-sm">
-                <i data-lucide="square" class="w-3.5 h-3.5"></i> Anuluj wyszukiwanie
-            </button>
-        </div>
-    `;
-    lucide.createIcons();
-    
-    if (typeof google !== 'undefined' && google.search && google.search.cse) {
-        google.search.cse.element.render({
-            div: 'inside-results',
-            tag: 'searchresults-only',
-            attributes: { gname: 'lidl-search' }
-        });
-        
-        const element = google.search.cse.element.getElement('lidl-search');
-        if (element) {
-            element.execute(query);
-        } else {
-            insideResults.innerHTML = '<p class="text-sm text-red-500">Błąd wyszukiwarki. Odśwież stronę (F5).</p>';
-        }
-    } else {
-        insideResults.innerHTML = '<p class="text-sm text-amber-600">Skrypt się ładuje. Poczekaj sekundę i kliknij ponownie.</p>';
-    }
+    // Wstrzyknięcie wyników do tabeli
+    znalezione.forEach(item => {
+        tabelaTbody.innerHTML += `
+            <tr class="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
+                <td class="p-3 font-bold text-gray-700">${item.sklep}</td>
+                <td class="p-3 text-gray-600">${item.produkt}</td>
+                <td class="p-3 text-right font-black text-gray-900">${item.cena.toFixed(2)} zł</td>
+                <td class="p-3 text-center">
+                    <button onclick="przepiszCeneToKalkulatora(${item.cena})" class="bg-blue-50 text-[#002f6c] hover:bg-[#002f6c] hover:text-white px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer">
+                        Wybierz do analizy
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
 }
 
-function zatrzymajWyszukiwanie() {
-    document.getElementById('google-results-box').classList.add('hidden');
-    document.getElementById('inside-results').innerHTML = ''; 
+// Dodatkowy trik: automatyczne wrzucenie wybranej ceny do kalkulatora
+function przepiszCeneToKalkulatora(cena) {
+    document.getElementById('min-price').value = cena;
+    obliczCene();
+    // Przewiń widok w dół do kalkulatora
+    document.getElementById('min-price').scrollIntoView({ behavior: 'smooth' });
 }
 
+// Symulator ceny
 function obliczCene() {
     const minPrice = parseFloat(document.getElementById('min-price').value);
     const discountPercent = parseFloat(document.getElementById('discount-percent').value);
