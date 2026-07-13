@@ -13,76 +13,33 @@ const SKLEP_DOMENY = {
     "Allegro": "allegro.pl"
 };
 
-let aktywneSklepy = ["Biedronka", "Aldi", "Sinsay", "Action"];
-let wybraneSklepyFiltru = [];
-let aktywnaKategoria = "Back to School";
+// Mapowanie kolorów dla kafelków w panelu szczegółów
+const KOLORY_KATEGORII = {
+    "Książki": "bg-blue-600",
+    "Back to School": "bg-yellow-500",
+    "Zabawki": "bg-pink-500"
+};
 
-if (typeof window.listaRaportu === 'undefined') {
-    window.listaRaportu = [];
-}
+let aktywneSklepyKategorii = [];
+let aktywnaKategoria = "";
+window.listaRaportu = [];
 
 // ==========================================
-// 2. INICJALIZACJA I OBSŁUGA NAWIGACJI MENU
+// 2. INICJALIZACJA I OBSŁUGA STARTOWA
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-    // Włączenie ikon na starcie
     RenderujIkony();
-
-    // Konfiguracja daty i filtrów
-    InicjalizujObslugeFiltrow();
     UstawDzisiejszaDate();
-    
-    // NAWIGACJA: Naprawa kafelków menu (np. Back to School)
-    const kafelkiMenu = document.querySelectorAll('[data-kategoria]');
-    const sekcjaMenu = document.getElementById('main-menu') || document.querySelector('.grid');
-    const sekcjaPanelu = document.getElementById('panel-analityczny');
-    const btnPowrot = document.getElementById('btn-powrot');
-
-    kafelkiMenu.forEach(kafelek => {
-        kafelek.addEventListener('click', () => {
-            const kat = kafelek.getAttribute('data-kategoria') || "Back to School";
-            aktywnaKategoria = kat;
-            
-            if (sekcjaMenu) sekcjaMenu.classList.add('hidden');
-            if (sekcjaPanelu) sekcjaPanelu.classList.remove('hidden');
-            
-            const naglowekKat = document.getElementById('nazwa-aktywnej-kategorii');
-            if (naglowekKat) naglowekKat.innerText = kat;
-        });
-    });
-
-    if (btnPowrot) {
-        btnPowrot.addEventListener('click', () => {
-            if (sekcjaPanelu) sekcjaPanelu.classList.add('hidden');
-            if (sekcjaMenu) sekcjaMenu.classList.remove('hidden');
-        });
-    }
-    
-    // Podpięcie wyszukiwania
-    const btnSzukaj = document.getElementById('search-button');
-    if (btnSzukaj) {
-        btnSzukaj.addEventListener('click', szukajImplementacja);
-    }
-    
-    const inputSzukaj = document.getElementById('search-input');
-    if (inputSzukaj) {
-        inputSzukaj.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') szukajImplementacja();
-        });
-    }
+    pokazEkranGlowny(); // Startujemy od ekranu głównego
+    InicjalizujNaglowkiRaportu();
 });
 
 function RenderujIkony() {
     if (window.lucide) {
         window.lucide.createIcons();
-    } else {
-        setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 800);
     }
 }
 
-// ==========================================
-// 3. FUNKCJE INTERFEJSU
-// ==========================================
 function UstawDzisiejszaDate() {
     const inputData = document.getElementById('data-analizy');
     if (inputData) {
@@ -94,30 +51,76 @@ function UstawDzisiejszaDate() {
     }
 }
 
-function InicjalizujObslugeFiltrow() {
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-    wybraneSklepyFiltru = [];
-    
-    checkboxes.forEach(cb => {
-        const labelText = cb.parentElement.textContent.trim();
-        if (aktywneSklepy.includes(labelText)) {
-            cb.checked = true;
-            if (!wybraneSklepyFiltru.includes(labelText)) wybraneSklepyFiltru.push(labelText);
-        }
+// ==========================================
+// 3. NAWIGACJA I PRZEŁĄCZANIE EKRANÓW
+// ==========================================
+function pokazEkranGlowny() {
+    document.getElementById('ekran-glowny').classList.remove('hidden');
+    document.getElementById('ekran-kategorii').classList.add('hidden');
+    document.getElementById('current-category-badge').classList.add('hidden');
+    aktywnaKategoria = "";
+    aktywneSklepyKategorii = [];
+}
 
-        cb.addEventListener('change', () => {
-            wybraneSklepyFiltru = [];
-            checkboxes.forEach(c => {
-                if (c.checked) {
-                    wybraneSklepyFiltru.push(c.parentElement.textContent.trim());
-                }
-            });
-        });
+function wybierzKategorie(nazwaKategorii, ikona, sklepy) {
+    aktywnaKategoria = nazwaKategorii;
+    aktywneSklepyKategorii = sklepy;
+
+    // Przełączanie widoczności ekranów
+    document.getElementById('ekran-glowny').classList.add('hidden');
+    document.getElementById('ekran-kategorii').classList.remove('hidden');
+
+    // Aktualizacja badge'a na pasku nawigacji
+    const badge = document.getElementById('current-category-badge');
+    badge.innerText = nazwaKategorii;
+    badge.classList.remove('hidden');
+
+    // Aktualizacja nagłówka i ikony w panelu filtrów
+    document.getElementById('kat-title').innerText = nazwaKategorii;
+    const iconBox = document.getElementById('kat-icon-box');
+    
+    // Reset klas kolorystycznych i ustawienie właściwego koloru
+    iconBox.className = `w-12 h-12 rounded-xl flex items-center justify-center text-white ${KOLORY_KATEGORII[nazwaKategorii] || 'bg-blue-600'}`;
+    iconBox.innerHTML = `<i data-lucide="${ikona}" class="w-6 h-6"></i>`;
+
+    // Czyszczenie poprzednich wyników wyszukiwania, by nie mylić użytkownika
+    document.getElementById('wyniki-box').classList.add('hidden');
+    document.getElementById('tabela-wynikow').innerHTML = '';
+    document.getElementById('search-input').value = '';
+
+    // Dynamiczne generowanie checkboxów dla sklepów z danej kategorii
+    GenerujCheckboxySklepow(sklepy);
+    RenderujIkony();
+}
+
+function GenerujCheckboxySklepow(sklepy) {
+    const kontener = document.getElementById('sklepy-lista');
+    kontener.innerHTML = '';
+
+    sklepy.forEach(sklep => {
+        const label = document.createElement('label');
+        label.className = "inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2 rounded-xl cursor-pointer select-none transition-colors border border-gray-200";
+        label.innerHTML = `
+            <input type="checkbox" value="${sklep}" checked class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+            <span>${sklep}</span>
+        `;
+        kontener.appendChild(label);
     });
 }
 
+// Pobiera listę tylko ZAZNACZONYCH sklepów z filtrów
+function PobierzZaznaczoneSklepy() {
+    const checkboxes = document.querySelectorAll('#sklepy-lista input[type="checkbox"]');
+    const zaznaczone = [];
+    checkboxes.forEach(cb => {
+        if (cb.checked) zaznaczone.push(cb.value);
+    });
+    // Jeśli użytkownik odznaczy wszystko, domyślnie bierzemy wszystkie dostępne dla kategorii
+    return zaznaczone.length > 0 ? zaznaczone : aktywneSklepyKategorii;
+}
+
 // ==========================================
-// 4. CZYSTY SILNIK WERYFIKACJI (BEZ GOOGLE API)
+// 4. WYSZUKIWANIE I LINKI DO SKLEPÓW
 // ==========================================
 function szukajImplementacja() {
     const queryInput = document.getElementById('search-input');
@@ -135,13 +138,13 @@ function szukajImplementacja() {
     wynikiBox.classList.remove('hidden');
     tabelaWynikow.innerHTML = '';
 
-    const ostateczneSklepy = wybraneSklepyFiltru.length > 0 ? wybraneSklepyFiltru : aktywneSklepy;
+    const wybraneSklepy = PobierzZaznaczoneSklepy();
 
-    ostateczneSklepy.forEach((sklep, index) => {
+    wybraneSklepy.forEach((sklep, index) => {
         const domena = SKLEP_DOMENY[sklep] || "google.com";
         const encodedQuery = encodeURIComponent(query);
 
-        // Generowanie inteligentnych linków weryfikacyjnych prosto do wyszukiwarek sklepów
+        // Generowanie precyzyjnych linków wewnętrznych do wyszukiwarek sklepów
         let linkWeryfikacyjny = `https://${domena}`;
         if (domena.includes('biedronka.pl')) linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodedQuery}`;
         else if (domena.includes('action.com')) linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodedQuery}`;
@@ -149,11 +152,14 @@ function szukajImplementacja() {
         else if (domena.includes('sinsay.com')) linkWeryfikacyjny = `https://www.sinsay.com/pl/pl/catalogsearch/result/?q=${encodedQuery}`;
         else if (domena.includes('empik.com')) linkWeryfikacyjny = `https://www.empik.com/szukaj/produkt?q=${encodedQuery}`;
         else if (domena.includes('allegro.pl')) linkWeryfikacyjny = `https://allegro.pl/listing?string=${encodedQuery}`;
+        else if (domena.includes('smyk.com')) linkWeryfikacyjny = `https://www.smyk.com/szukaj/produkt?q=${encodedQuery}`;
+        else if (domena.includes('taniaksiazka.pl')) linkWeryfikacyjny = `https://www.taniaksiazka.pl/szukaj/zapytanie-${encodedQuery}`;
+        else if (domena.includes('swiatksiazki.pl')) linkWeryfikacyjny = `https://www.swiatksiazki.pl/catalogsearch/result/?q=${encodedQuery}`;
 
         const uniqueId = `cena-${index}`;
 
         const row = document.createElement('tr');
-        row.className = "border-b border-gray-50 hover:bg-gray-50/80 transition-colors";
+        row.className = "border-b border-gray-100 hover:bg-gray-50/80 transition-colors";
         row.innerHTML = `
             <td class="p-3 font-bold text-gray-700">${sklep}</td>
             <td class="p-3">
@@ -163,7 +169,7 @@ function szukajImplementacja() {
             <td class="p-3 text-right">
                 <div class="inline-flex items-center gap-1">
                     <input type="number" id="${uniqueId}" step="0.01" min="0" placeholder="0.00" 
-                           class="w-20 bg-white border border-gray-300 rounded-lg p-1.5 text-sm font-bold text-right text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                           class="w-24 bg-white border border-gray-300 rounded-lg p-1.5 text-sm font-bold text-right text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <span class="text-xs font-bold text-gray-500">zł</span>
                 </div>
             </td>
@@ -186,8 +192,22 @@ function szukajImplementacja() {
 }
 
 // ==========================================
-// 5. RAPORTOWANIE I EKSPORT EXCEL
+// 5. OBSŁUGA LISTY RAPORTU I USUWANIA POZYCJI
 // ==========================================
+function InicjalizujNaglowkiRaportu() {
+    const naglowek = document.getElementById('naglowek-tabeli-raportu');
+    if (naglowek) {
+        naglowek.innerHTML = `
+            <th class="p-2.5">Data</th>
+            <th class="p-2.5">Kategoria</th>
+            <th class="p-2.5">Sklep</th>
+            <th class="p-2.5">Artykuł / Produkt</th>
+            <th class="p-2.5 text-right">Cena</th>
+            <th class="p-2.5 text-center">Akcja</th>
+        `;
+    }
+}
+
 function ZatwierdzPozycje(sklep, inputId) {
     const query = document.getElementById('search-input').value.trim();
     const cenaInput = document.getElementById(inputId);
@@ -200,17 +220,23 @@ function ZatwierdzPozycje(sklep, inputId) {
 
     const sformatowanaCena = cenaWpisana.toFixed(2).replace('.', ',') + ' zł';
     WstrzyknijDoTabeliRaportu(sklep, query, sformatowanaCena);
+    
+    // Czyszczenie inputu po pomyślnym dodaniu
+    cenaInput.value = '';
 }
 
 function WstrzyknijDoTabeliRaportu(sklep, produkt, cena) {
     const raportBox = document.getElementById('raport-box');
     const tabelaBody = document.getElementById('tabela-raportu-body');
     const inputData = document.getElementById('data-analizy');
-    const dataAnalizy = inputData ? inputData.value : new Date().toLocaleDateString('pl-PL');
+    const dataAnalizy = inputData && inputData.value ? inputData.value : new Date().toLocaleDateString('pl-PL');
 
     if (raportBox) raportBox.classList.remove('hidden');
 
+    const idPozycji = Date.now() + Math.random().toString(36).substr(2, 5);
+
     const nowaPozycja = {
+        id: idPozycji,
         data: dataAnalizy,
         kategoria: aktywnaKategoria,
         sklep: sklep,
@@ -222,43 +248,90 @@ function WstrzyknijDoTabeliRaportu(sklep, produkt, cena) {
 
     if (tabelaBody) {
         const row = document.createElement('tr');
-        row.className = "border-b border-gray-100 hover:bg-gray-50/50";
+        row.id = `row-${idPozycji}`;
+        row.className = "border-b border-gray-100 hover:bg-gray-50/50 transition-colors";
         row.innerHTML = `
             <td class="p-2.5 text-gray-500">${nowaPozycja.data}</td>
             <td class="p-2.5 font-medium text-gray-600">${nowaPozycja.kategoria}</td>
             <td class="p-2.5 font-bold text-gray-800">${nowaPozycja.sklep}</td>
             <td class="p-2.5 text-gray-900">${nowaPozycja.produkt}</td>
             <td class="p-2.5 text-right font-bold text-emerald-600">${nowaPozycja.cena}</td>
+            <td class="p-2.5 text-center">
+                <button onclick="UsunZRaportu('${idPozycji}')" class="text-red-500 hover:text-red-700 font-bold p-1 border-0 bg-transparent cursor-pointer text-xs flex items-center gap-0.5 mx-auto">
+                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Usuń
+                </button>
+            </td>
         `;
         tabelaBody.appendChild(row);
+        RenderujIkony();
     }
 }
 
-function eksportujDoExcel() {
+function UsunZRaportu(id) {
+    window.listaRaportu = window.listaRaportu.filter(item => item.id !== id);
+    const row = document.getElementById(`row-${id}`);
+    if (row) row.remove();
+
+    if (window.listaRaportu.length === 0) {
+        document.getElementById('raport-box').classList.add('hidden');
+    }
+}
+
+// ==========================================
+// 6. EKSPORT DO EXCELA ORAZ KOPIOWANIE DO GOOGLE SHEETS (CTRL + V)
+// ==========================================
+function eksportujDoXLSX() {
     if (window.listaRaportu.length === 0) {
         alert("Raport jest pusty! Dodaj najpierw ceny.");
         return;
     }
 
-    const daneDoExcela = window.listaRaportu.map(item => ({
-        "Data analizy": item.data,
-        "Kategoria": item.kategoria,
-        "Sklep": item.sklep,
-        "Artykuł / Produkt": item.produkt,
-        "Cena rynkowa": item.cena
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(daneDoExcela);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Analiza Cenowa");
-
-    worksheet['!cols'] = [{wch: 15}, {wch: 20}, {wch: 15}, {wch: 40}, {wch: 15}];
-
-    const inputData = document.getElementById('data-analizy');
-    const dataPliku = inputData ? inputData.value : "raport";
+    // 1. BUDOWANIE STRUKTURY TEKSTOWEJ POD SCHOWEK (Google Sheets format TSV)
+    // Nagłówki rozdzielone tabulatorami, linie rozdzielone znakiem nowej linii
+    let tsvContent = "Data analizy\tKategoria\tSklep\tArtykuł / Produkt\tCena rynkowa\n";
     
-    XLSX.writeFile(workbook, `Raport_Cenowy_${dataPliku}.xlsx`);
+    window.listaRaportu.forEach(item => {
+        tsvContent += `${item.data}\t${item.kategoria}\t${item.sklep}\t${item.produkt}\t${item.cena}\n`;
+    });
+
+    // Kopiowanie do schowka systemowego
+    navigator.clipboard.writeText(tsvContent).then(() => {
+        // 2. GENEROWANIE I POBIERANIE RÓWNOLEGLE PLIKU .XLSX ZA POMOCĄ SHEETJS
+        const daneDoExcela = window.listaRaportu.map(item => ({
+            "Data analizy": item.data,
+            "Kategoria": item.kategoria,
+            "Sklep": item.sklep,
+            "Artykuł / Produkt": item.produkt,
+            "Cena rynkowa": item.cena
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(daneDoExcela);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Analiza Cenowa");
+
+        // Formatowanie szerokości kolumn w pliku Excel
+        worksheet['!cols'] = [{wch: 15}, {wch: 20}, {wch: 15}, {wch: 40}, {wch: 15}];
+
+        const inputData = document.getElementById('data-analizy');
+        const dataPliku = inputData && inputData.value ? inputData.value : "raport";
+        
+        // Wywołanie pobierania pliku
+        XLSX.writeFile(workbook, `Raport_Cenowy_${dataPliku}.xlsx`);
+
+        // 3. OTWARCIE CZYSTEGO ARKUSZA GOOGLE
+        alert("Sukces!\n1. Pobrano plik Raportu w formacie XLSX.\n2. Dane tabeli skopiowano automatycznie do Twojego schowka!\n\nZostaniesz przeniesiony do Google Sheets. Kliknij dowolną komórkę i użyj Ctrl + V, aby wkleić dane.");
+        window.open("https://sheets.new", "_blank");
+        
+    }).catch(err => {
+        console.error('Błąd zapisu do schowka: ', err);
+        alert("Pobrano plik Excel, ale wystąpił problem z automatycznym kopiowaniem do schowka.");
+    });
 }
 
+// Mapowanie funkcji globalnych pod atrybuty onclick z pliku HTML
+window.pokazEkranGlowny = pokazEkranGlowny;
+window.wybierzKategorie = wybierzKategorie;
+window.szukajImplementacja = szukajImplementacja;
 window.ZatwierdzPozycje = ZatwierdzPozycje;
-window.eksportujDoExcel = eksportujDoExcel;
+window.UsunZRaportu = UsunZRaportu;
+window.eksportujDoXLSX = eksportujDoXLSX;
