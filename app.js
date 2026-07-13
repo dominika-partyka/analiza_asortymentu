@@ -96,7 +96,6 @@ function przepnijFiltrSklepu(cb) {
 }
 
 // Główna implementacja wyszukiwania za pomocą Google API
-// Główna implementacja wyszukiwania za pomocą Google API
 async function szukajImplementacja() {
     const query = document.getElementById('search-input').value.trim();
     const tabelaWynikow = document.getElementById('tabela-wynikow');
@@ -104,11 +103,6 @@ async function szukajImplementacja() {
 
     if (!query) {
         alert('Wpisz nazwę poszukiwanego artykułu!');
-        return;
-    }
-
-    if (wybraneSklepyFiltru.length === 0) {
-        alert('Musisz zaznaczyć przynajmniej jeden sklep do odfiltrowania wyników!');
         return;
     }
 
@@ -121,18 +115,8 @@ async function szukajImplementacja() {
         </tr>
     `;
 
-    // Konwersja zaznaczonych sklepów na domeny
-    const szukaneDomeny = wybraneSklepyFiltru
-        .map(sklep => SKLEP_DOMENY[sklep])
-        .filter(domena => domena !== undefined);
-
-    // Jeśli nic nie zaznaczono, bierzemy domyślne dla kategorii
-    const ostateczneDomeny = szukaneDomeny.length > 0 ? szukaneDomeny : aktywneSklepy.map(s => SKLEP_DOMENY[s]);
-
-    const filtrStron = ostateczneDomeny.map(domena => `site:${domena}`).join(' OR ');
-    const pelneZapytanie = `${query} (${filtrStron})`;
-
-    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(pelneZapytanie)}&cx_global=1`;
+    // Wysyłamy czyste zapytanie – Google sam ograniczy wyniki do stron z listy w panelu CSE
+    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}`;
 
     try {
         const response = await fetch(url);
@@ -144,7 +128,7 @@ async function szukajImplementacja() {
             tabelaWynikow.innerHTML = `
                 <tr>
                     <td colspan="5" class="p-6 text-center text-sm text-gray-400">
-                        Brak bezpośrednich trafień dla frazy "${query}" w wybranych sklepach.
+                        Brak bezpośrednich trafień dla frazy "${query}" w skonfigurowanych sklepach.
                     </td>
                 </tr>
             `;
@@ -201,23 +185,6 @@ async function szukajImplementacja() {
             </tr>
         `;
     }
-}
-
-// Funkcja dodająca wybrany artykuł z rynku do końcowej sekcji raportu
-function dodajDoRaportu(sklep, nazwa, cena) {
-    const dataAnalizy = document.getElementById('data-analizy').value || new Date().toISOString().split('T')[0];
-    
-    const nowyProdukt = {
-        id: Date.now() + Math.random().toString(36).substr(2, 5),
-        kategoria: aktywnaKategoria,
-        data: dataAnalizy,
-        sklep: sklep,
-        nazwaArtykulu: nazwa,
-        cenaKonkurencji: cena
-    };
-
-    listaDoEksportu.push(nowyProdukt);
-    odswiezTabeleRaportu();
 }
 
 // Funkcja usuwająca pozycję z raportu przed eksportem
