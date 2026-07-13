@@ -249,8 +249,11 @@ function eksportujDoXLSX() {
         return;
     }
     
-    // 1. Budujemy tabelę w formacie HTML, który Google Sheets idealnie potrafi parsować
-    let html = `<table border="1"><thead><tr><th>Nazwa artykułu</th>`;
+    // Budujemy czysty kod tabeli z kodowaniem UTF-8, aby Arkusze automatycznie rozpoznały polskie znaki i strukturę
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">`;
+    html += `<head><meta charset="utf-8"></head><body>`;
+    html += `<table border="1"><thead><tr style="background-color: #f3f4f6; font-weight: bold;"><th>Nazwa artykułu</th>`;
+    
     aktywneSklepy.forEach(sklep => {
         html += `<th>Cena ${sklep}</th><th>Link ${sklep}</th>`;
     });
@@ -261,7 +264,6 @@ function eksportujDoXLSX() {
         aktywneSklepy.forEach(sklep => {
             const daneSklepu = item.ofertySklepowe[sklep];
             if (daneSklepu) {
-                // Formatujemy cenę z przecinkiem, żeby Arkusze Google od razu widziały w tym liczbę/walutę
                 const cenaFormatowana = daneSklepu.cena.toFixed(2).replace('.', ',');
                 html += `<td>${cenaFormatowana}</td><td>${daneSklepu.link}</td>`;
             } else {
@@ -270,17 +272,18 @@ function eksportujDoXLSX() {
         });
         html += `</tr>`;
     });
-    html += `</tbody></table>`;
+    html += `</tbody></table></body></html>`;
     
-    // 2. Automatycznie kopiujemy wygenerowaną tabelę do schowka systemowego użytkownika
-    const blobHtml = new Blob([html], { type: 'text/html' });
-    const data = [new ClipboardItem({ 'text/html': blobHtml })];
+    // Generujemy plik kompatybilny z automatycznym importem Arkuszy
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     
-    navigator.clipboard.write(data).then(() => {
-        // 3. Po udanym skopiowaniu, od razu otwieramy nową, czystą kartę Arkuszy Google
-        // Skrót "sheets.new" to oficjalny skrót Google, który tworzy nowy, pusty arkusz na Twoim koncie
-        window.open('https://sheets.new', '_blank');
-    }).catch(err => {
-        alert("Błąd kopiowania danych do schowka: " + err);
-    });
+    const linkPobierania = document.createElement("a");
+    const dataAnalizy = document.getElementById('data-analizy').value;
+    linkPobierania.setAttribute("href", url);
+    linkPobierania.setAttribute("download", `Raport_Cenowy_${dataAnalizy}.xls`);
+    document.body.appendChild(linkPobierania);
+    
+    linkPobierania.click();
+    document.body.removeChild(linkPobierania);
 }
