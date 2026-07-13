@@ -133,9 +133,8 @@ function PobierzZaznaczoneSklepy() {
     });
     return zaznaczone.length > 0 ? zaznaczone : aktywneSklepyKategorii;
 }
-
 // ==========================================
-// 4. PERFEKCYJNIE DOPASOWANA WYSZUKIWARKA (1:1 JAK RĘCZNE KLIKNIĘCIE LUPY)
+// 4. PERFEKCYJNIE DOPASOWANA WYSZUKIWARKA (ZMIANA: "OTWÓRZ LINK")
 // ==========================================
 function szukajImplementacja() {
     const tytulInput = document.getElementById('search-title');
@@ -173,21 +172,14 @@ function szukajImplementacja() {
         const domena = SKLEP_DOMENY[sklep] || "google.com";
         let linkWeryfikacyjny = `https://${domena}`;
 
-        // Przygotowanie frazy podstawowej
         let queryStr = ean ? `${tytul} ${ean}` : tytul;
         
-        // --- SPECJALISTYCZNE GENEROWANIE STRINGS DLA RÓŻNYCH SILNIKÓW ---
-        
-        // 1. Standardowe kodowanie małych liter (wymagane m.in. przez Smyka)
         const encodedQueryLower = encodeURIComponent(queryStr.toLowerCase()); 
-        
-        // 2. Kodowanie z plusami dla Taniej Książki
         const queryWithPluses = encodeURIComponent(queryStr).replace(/%20/g, '+'); 
 
-        // 3. Konwersja 1:1 dla Tantis (ich lupa zamienia spacje na myślniki, usuwa polskie ogonki i wymusza małe litery)
         const queryForTantis = queryStr.toLowerCase()
             .replace(/ /g, '-')
-            .replace(/[ąàáâãäå]/g, 'a')
+            .replace(/[ąąáâãäå]/g, 'a')
             .replace(/[ęèéêë]/g, 'e')
             .replace(/[óòóôõöø]/g, 'o')
             .replace(/[śćźż]/g, function(m) {
@@ -196,7 +188,6 @@ function szukajImplementacja() {
             .replace(/[ł]/g, 'l')
             .replace(/[ń]/g, 'n');
 
-        // --- PRECYZYJNE MAPOWANIE SILNIKÓW (ODWZOROWANIE FORMULARZY SYSTEMOWYCH) ---
         if (domena.includes('biedronka.pl')) {
             linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodeURIComponent(queryStr)}`;
         }
@@ -212,19 +203,17 @@ function szukajImplementacja() {
         else if (domena.includes('empik.com')) {
             linkWeryfikacyjny = `https://www.empik.com/szukaj/produkt?q=${encodeURIComponent(queryStr)}`;
         }
-        else if (domena.includes('allegro.pl')) {
+        else if (domena.includes('allgro.pl') || domena.includes('allegro.pl')) {
             linkWeryfikacyjny = `https://allegro.pl/listing?string=${encodeURIComponent(queryStr)}`;
         }
         else if (domena.includes('taniaksiazka.pl')) {
             linkWeryfikacyjny = `https://www.taniaksiazka.pl/szukaj?q=${queryWithPluses}`;
         }
         else if (domena.includes('tantis.pl')) {
-            // ODWZOROWANIE LUPY TANTIS: Ich wewnętrzny skrypt kieruje zapytanie bezpośrednio na slug wyszukiwarki bez parametrów ?q=
             linkWeryfikacyjny = `https://tantis.pl/szukaj/${queryForTantis}`;
         }
         else if (domena.includes('smyk.com')) {
-            // ODWZOROWANIE LUPY SMYK: Wymuszone małe litery i poprawny punkt wejścia skryptu /szukaj.html
-            linkWeryfikacyjny = `https://www.smyk.com/szukaj.html?q=${encodedQueryLower}`;
+            linkWeryfikacyjny = `https://www.smyk.com/pl/pl/szukaj.html?q=${encodedQueryLower}`;
         }
 
         mapowanieLinkowBiezegoWyszukania[sklep] = linkWeryfikacyjny;
@@ -239,17 +228,18 @@ function szukajImplementacja() {
             htmlZawartosc += `
                 <td class="p-4 font-bold text-gray-900 bg-gray-50/50 align-middle" rowspan="${lacznaLiczbaSklepow}" style="border-right: 1px solid #f3f4f6; max-w-xs break-words;">
                     <div class="text-base">${frazaDoWyswietlenia}</div>
-                    <div class="text-xs text-gray-400 font-normal mt-1">Kategoria: ${aktywnaKategoria}</div>
+                    <div class="text-xs text-gray-400 font-normal mt-1">Grupowanie: ${aktywnaKategoria}</div>
                 </td>
             `;
         }
 
+        // POPRAWKA: Słowo "silnik" zmienione na "link" w elemencie <a> poniżej
         htmlZawartosc += `
             <td class="p-3 align-middle">
                 <div class="flex items-center justify-between gap-4">
                     <span class="font-bold text-gray-700">${sklep}</span>
                     <a href="${linkWeryfikacyjny}" target="_blank" class="inline-flex items-center bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md hover:bg-blue-100 font-bold text-xs gap-1 border border-blue-200/50 no-underline">
-                        Otwórz silnik <i data-lucide="external-link" class="w-3 h-3"></i>
+                        Otwórz link <i data-lucide="external-link" class="w-3 h-3"></i>
                     </a>
                 </div>
             </td>
@@ -282,17 +272,14 @@ function szukajImplementacja() {
 }
 
 // ==========================================
-// 5. ZCZYTYWANIE CEN I BUDOWANIE RAPORTU MACIERZOWEGO
+// 5. OBSŁUGA POZIOMEGO RAPORTU (START OD KOLUMNY ARTYKUŁ)
 // ==========================================
 function InicjalizujNaglowkiRaportu() {
     const naglowek = document.getElementById('naglowek-tabeli-raportu');
     if (!naglowek) return;
 
-    let html = `
-        <th class="p-2.5">Data analizy</th>
-        <th class="p-2.5">Kategoria</th>
-        <th class="p-2.5">Artykuł / Produkt</th>
-    `;
+    // USUNIĘTO KOLUMNĘ DATA ORAZ KATEGORIA - Zaczynamy od Artykułu
+    let html = `<th class="p-2.5">Artykuł / Produkt</th>`;
     
     aktywneSklepyKategorii.forEach(sklep => {
         html += `<th class="p-2.5 text-right border-l border-gray-200 bg-gray-50">${sklep}</th>`;
@@ -305,13 +292,9 @@ function InicjalizujNaglowkiRaportu() {
     naglowek.innerHTML = html;
 }
 
-// URUCHAMIANE JEDYNYM PRZYCISKIEM: Pobiera wszystkie ceny i wstawia minusy tam, gdzie pusto
 function ZatwierdzZbiorczyProdukt(nazwaArtykulu) {
     const tytulInput = document.getElementById('search-title');
     const eanInput = document.getElementById('search-ean');
-    const inputData = document.getElementById('data-analizy');
-    
-    const dataAnalizy = inputData && inputData.value ? inputData.value : new Date().toLocaleDateString('pl-PL');
 
     const inputsCen = document.querySelectorAll('.kl-wejscie-ceny');
     let mapyCenProduktów = {};
@@ -321,7 +304,6 @@ function ZatwierdzZbiorczyProdukt(nazwaArtykulu) {
         const sklep = input.getAttribute('data-sklep');
         const cenaWartosc = parseFloat(input.value);
 
-        // Brak jakichkolwiek komunikatów błędu - puste pole = minus i pracujemy dalej!
         if (!isNaN(cenaWartosc) && cenaWartosc > 0) {
             mapyCenProduktów[sklep] = cenaWartosc.toFixed(2).replace('.', ',') + ' zł';
             mapyLinkówProduktów[sklep] = mapowanieLinkowBiezegoWyszukania[sklep] || `https://${SKLEP_DOMENY[sklep]}`;
@@ -335,8 +317,6 @@ function ZatwierdzZbiorczyProdukt(nazwaArtykulu) {
 
     const nowyWpisWiersza = {
         id: idPozycji,
-        data: dataAnalizy,
-        kategoria: aktywnaKategoria,
         produkt: nazwaArtykulu,
         ceny: mapyCenProduktów,
         linki: mapyLinkówProduktów
@@ -344,7 +324,6 @@ function ZatwierdzZbiorczyProdukt(nazwaArtykulu) {
 
     window.listaRaportu.push(nowyWpisWiersza);
 
-    // Automatyczne czyszczenie ekranu wyszukiwania po kliknięciu
     document.getElementById('wyniki-box').classList.add('hidden');
     document.getElementById('tabela-wynikow').innerHTML = '';
     tytulInput.value = '';
@@ -371,11 +350,8 @@ function OdswiezWidokTabeliRaportu() {
         const row = document.createElement('tr');
         row.className = "border-b border-gray-100 hover:bg-gray-50/50 transition-colors";
 
-        let rowHtml = `
-            <td class="p-2.5 text-gray-500">${item.data}</td>
-            <td class="p-2.5 font-medium text-gray-600">${item.kategoria}</td>
-            <td class="p-2.5 font-bold text-gray-900 max-w-xs truncate" title="${item.produkt}">${item.produkt}</td>
-        `;
+        // Pierwsza kolumna to bezpośrednio pogrubiony tytuł przedmiotu
+        let rowHtml = `<td class="p-2.5 font-bold text-gray-900 max-w-sm truncate" title="${item.produkt}">${item.produkt}</td>`;
 
         aktywneSklepyKategorii.forEach(sklep => {
             const cenaValue = item.ceny[sklep] || "-";
@@ -391,7 +367,7 @@ function OdswiezWidokTabeliRaportu() {
             const url = item.linki[sklep];
             if (url) {
                 linkiHtml += `
-                    <a href="${url}" target="_blank" title="Link dla sklepu: ${sklep}" 
+                    <a href="${url}" target="_blank" title="Otwórz link: ${sklep}" 
                        class="inline-flex items-center justify-center w-6 h-6 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-md text-xs font-bold no-underline transition-all border border-blue-100 shadow-xs mx-0.5">
                        ${sklep.charAt(0)}
                     </a>
@@ -423,7 +399,7 @@ function UsunZRaportuZIndeksu(indeks) {
 }
 
 // ==========================================
-// 6. MACIERZOWE GENEROWANIE PLIKÓW XLSX
+// 6. MACIERZOWE GENEROWANIE PLIKÓW XLSX (ZMODYFIKOWANE)
 // ==========================================
 function eksportujDoXLSX() {
     if (window.listaRaportu.length === 0) {
@@ -431,14 +407,15 @@ function eksportujDoXLSX() {
         return;
     }
 
-    let tsvNaglowek = ["Data analizy", "Kategoria", "Artykuł / Produkt"];
+    // Pierwsza kolumna w schowku TSV to od teraz również wyłącznie nazwa przedmiotu
+    let tsvNaglowek = ["Artykuł / Produkt"];
     aktywneSklepyKategorii.forEach(sklep => tsvNaglowek.push(sklep));
     aktywneSklepyKategorii.forEach(sklep => tsvNaglowek.push(`Link ${sklep}`));
     
     let tsvContent = tsvNaglowek.join("\t") + "\n";
 
     window.listaRaportu.forEach(item => {
-        let tsvWiersz = [item.data, item.kategoria, item.produkt];
+        let tsvWiersz = [item.produkt];
         aktywneSklepyKategorii.forEach(sklep => tsvWiersz.push(item.ceny[sklep] || "-"));
         aktywneSklepyKategorii.forEach(sklep => tsvWiersz.push(item.linki[sklep] || "-"));
         tsvContent += tsvWiersz.join("\t") + "\n";
@@ -447,8 +424,6 @@ function eksportujDoXLSX() {
     navigator.clipboard.writeText(tsvContent).then(() => {
         const daneDoExcela = window.listaRaportu.map(item => {
             let rowObj = {
-                "Data analizy": item.data,
-                "Kategoria": item.kategoria,
                 "Artykuł / Produkt": item.produkt
             };
             aktywneSklepyKategorii.forEach(sklep => rowObj[sklep] = item.ceny[sklep] || "-");
@@ -458,9 +433,9 @@ function eksportujDoXLSX() {
 
         const worksheet = XLSX.utils.json_to_sheet(daneDoExcela);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Raport Porównawczy");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Zestawienie Cenowe");
 
-        let colsSpec = [{wch: 15}, {wch: 15}, {wch: 35}];
+        let colsSpec = [{wch: 40}]; // Szeroka pierwsza kolumna na nazwę przedmiotu
         aktywneSklepyKategorii.forEach(() => colsSpec.push({wch: 14}));
         aktywneSklepyKategorii.forEach(() => colsSpec.push({wch: 20}));
         worksheet['!cols'] = colsSpec;
@@ -470,7 +445,7 @@ function eksportujDoXLSX() {
         
         XLSX.writeFile(workbook, `Zestawienie_Konkurencji_${dataPliku}.xlsx`);
 
-        alert("Pobrano plik Excel! Skopiowano dane do schowka, wklej je w Google Sheets za pomocą Ctrl+V.");
+        alert("Pobrano plik Excel! Pierwsza kolumna to Artykuł. Wklej zawartość do Google Sheets za pomocą Ctrl+V.");
         window.open("https://sheets.new", "_blank");
     }).catch(err => {
         console.error(err);
