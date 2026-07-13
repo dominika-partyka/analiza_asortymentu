@@ -132,7 +132,7 @@ async function szukajImplementacja() {
     const filtrStron = ostateczneDomeny.map(domena => `site:${domena}`).join(' OR ');
     const pelneZapytanie = `${query} (${filtrStron})`;
 
-    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(pelneZapytanie)}`;
+    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(pelneZapytanie)}&cx_global=1`;
 
     try {
         const response = await fetch(url);
