@@ -6,13 +6,14 @@ function wybierzKategorie(nazwa, ikona, sklepy) {
     document.getElementById('ekran-glowny').classList.add('hidden');
     document.getElementById('ekran-kategorii').classList.remove('hidden');
     
-    // Aktualizacja nagłówków i odznaki
+    // Ukrywamy boks z wynikami przy zmianie kategorii
+    document.getElementById('google-results-box').classList.add('hidden');
+    
     document.getElementById('kat-title').innerText = nazwa;
     const badge = document.getElementById('current-category-badge');
     badge.innerText = nazwa;
     badge.classList.remove('hidden');
     
-    // Ustawienie koloru ikony w zależności od kategorii
     const iconBox = document.getElementById('kat-icon-box');
     iconBox.innerHTML = `<i data-lucide="${ikona}" class="w-6 h-6"></i>`;
     
@@ -20,13 +21,11 @@ function wybierzKategorie(nazwa, ikona, sklepy) {
     if(nazwa === 'Back to School') iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center text-white bg-yellow-500";
     if(nazwa === 'Zabawki') iconBox.className = "w-12 h-12 rounded-xl flex items-center justify-center text-white bg-pink-500";
     
-    // Dynamiczna zmiana podpowiedzi dla systemu FOCUS
     const focusGrupa = document.getElementById('focus-grupa');
     if(nazwa === 'Książki') focusGrupa.innerText = "KULTURA I ROZRYWKA / KSIĄŻKI";
     if(nazwa === 'Back to School') focusGrupa.innerText = "ART. PAPIERNICZE / SZKOLNE";
     if(nazwa === 'Zabawki') focusGrupa.innerText = "ZABAWKI I GRY SEZONOWE";
 
-    // Generowanie checkboxów dla sklepów
     const sklepyLista = document.getElementById('sklepy-lista');
     sklepyLista.innerHTML = '';
     sklepy.forEach(sklep => {
@@ -38,7 +37,6 @@ function wybierzKategorie(nazwa, ikona, sklepy) {
         `;
     });
     
-    // Reset pola wyszukiwania i kalkulatora
     document.getElementById('search-input').value = '';
     document.getElementById('min-price').value = '';
     document.getElementById('target-price').innerText = '0.00 zł';
@@ -52,24 +50,23 @@ function pokazEkranGlowny() {
     document.getElementById('current-category-badge').classList.add('hidden');
 }
 
-// Funkcja odpowiedzialna za bezpieczne wyszukiwanie
-function uruchomWyszukiwanie() {
+// NOWA FUNKCJA - WYSZUKUJE BEZPOŚREDNIO WEWNĄTRZ PANELU
+function uruchomWyszukiwanieWewnetrzne() {
     const produkt = document.getElementById('search-input').value.trim();
-    const kategoria = document.getElementById('kat-title').innerText;
     
     if (!produkt) {
         alert('Wpisz najpierw nazwę produktu!');
         return;
     }
     
-    // Pobieramy zaznaczone sklepy konkurencji
+    // Pobieramy zaznaczone przez Ciebie checkboxy ze sklepami
     const checkboxy = document.querySelectorAll('#sklepy-lista input:checked');
     let wybraneSklepy = [];
     checkboxy.forEach(cb => {
         wybraneSklepy.push(cb.nextElementSibling.innerText);
     });
     
-    // Budujemy zapytanie do Google z operatorami site:
+    // Budujemy zapytanie z operatorami "site:" dla Google CSE
     let query = produkt;
     if (wybraneSklepy.length > 0) {
         query += " (";
@@ -88,12 +85,27 @@ function uruchomWyszukiwanie() {
         query += siteQueries.join(" OR ") + ")";
     }
     
-    // Otwieramy czyste wyszukiwanie w nowej karcie Google
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-    window.open(url, '_blank');
+    // Pokazujemy boks z wynikami i czyścimy jego starą zawartość
+    const resultsBox = document.getElementById('google-results-box');
+    const insideResults = document.getElementById('inside-results');
+    resultsBox.classList.remove('hidden');
+    insideResults.innerHTML = '<p class="text-sm text-gray-400 animate-pulse">Trwa przeszukiwanie asortymentu konkurencji...</p>';
+    
+    // Magiczny skrypt Google CSE: wstrzykujemy wyniki do naszego diva zamiast nowej karty
+    google.search.cse.element.render({
+        div: 'inside-results',
+        tag: 'searchresults-only',
+        attributes: {
+            gname: 'lidl-search'
+        }
+    });
+    
+    // Wykonujemy wyszukiwanie za pomocą oficjalnego API Google komponentu
+    const element = google.search.cse.element.getElement('lidl-search');
+    element.execute(query);
 }
 
-// Funkcja kalkulatora
+// Funkcja kalkulatora cenowego
 function obliczCene() {
     const minPrice = parseFloat(document.getElementById('min-price').value);
     const discountPercent = parseFloat(document.getElementById('discount-percent').value);
