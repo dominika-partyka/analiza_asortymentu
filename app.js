@@ -1,7 +1,7 @@
 // Inicjalizacja ikon Lucide
 lucide.createIcons();
 
-// ROZBUDOWANA TESTOWA BAZA DANYCH (MOCK-UP) - dodane ID dla bezbłędnego klikania
+// ROZBUDOWANA TESTOWA BAZA DANYCH (MOCK-UP)
 const BAZA_GAZETEK = [
     { id: 0, kategoria: "Back to School", sklep: "Biedronka", produkt: "Zeszyt A5 60k w kratkę", cena: 2.99, url: "https://www.biedronka.pl/pl/sklep/artykuły-szkolne/zeszyt-a5" },
     { id: 1, kategoria: "Back to School", sklep: "Biedronka", produkt: "Kredki świecowe Bambino 24 kolory", cena: 11.49, url: "https://www.biedronka.pl/pl/gazetka/kredki-bambino" },
@@ -56,10 +56,21 @@ function wybierzKategorie(nazwa, ikona, sklepy) {
     });
     
     document.getElementById('search-input').value = '';
-    KOSZYK_RAPORTU = []; // Czyszczenie raportu przy zmianie kategorii głównej
+    KOSZYK_RAPORTU = []; 
     
     odswiezTabeleRaportu();
     lucide.createIcons();
+
+    // OBSŁUGA KLIKNIĘCIA ENTER W POLU WYSZUKIWANIA
+    const inputSzukaj = document.getElementById('search-input');
+    if (inputSzukaj) {
+        inputSzukaj.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); 
+                szukajImplementacja();  
+            }
+        });
+    }
 }
 
 function pokazEkranGlowny() {
@@ -105,7 +116,6 @@ function odswiezTabeleWynikow() {
     }
     
     znalezione.forEach((item) => {
-        // Identyfikacja po ID wyklucza błędy parsowania stringów w JS
         const istnieje = KOSZYK_RAPORTU.some(r => r.nazwaWyszukiwana === item.produkt && r.ofertySklepowe[item.sklep]);
         
         let przyciskRaportu = '';
@@ -218,7 +228,6 @@ function odswiezTabeleRaportu() {
             }
         });
         
-        // Bezpieczne usuwanie całego wiersza na podstawie dokładnego dopasowania nazwy
         const bezpiecznaNazwa = item.nazwaWyszukiwana.replace(/'/g, "\\'");
         wierszHtml += `
             <td class="p-3 text-center bg-red-50/20">
@@ -249,7 +258,6 @@ function eksportujDoXLSX() {
         return;
     }
     
-    // Budujemy czysty format tabeli tekstowej (rozdzielanej tabulatorami), którą Arkusze Google i Excel rozumieją perfekcyjnie
     let naglowki = ["Nazwa artykułu"];
     aktywneSklepy.forEach(sklep => {
         naglowki.push(`Cena ${sklep}`);
@@ -275,7 +283,6 @@ function eksportujDoXLSX() {
     
     const pelnyTekstDoSkopiowania = linie.join("\n");
 
-    // TWORZYMY DYNAMICZNE OKNO (MODAL) NA ŚRODKU EKRANU
     let modal = document.createElement("div");
     modal.style.position = "fixed";
     modal.style.top = "0";
@@ -309,7 +316,6 @@ function eksportujDoXLSX() {
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
     
-    // Obsługa przycisków w oknie
     document.getElementById("btn-zamknij-modal").onclick = function() {
         document.body.removeChild(modal);
     };
@@ -323,7 +329,6 @@ function eksportujDoXLSX() {
         btn.innerText = "Skopiowano!";
         btn.style.backgroundColor = "#2563eb";
         
-        // Otwieramy bazowe Arkusze, żebyś mogła wybrać swój docelowy dokument roboczy
         setTimeout(() => {
             window.open('https://docs.google.com/spreadsheets/', '_blank');
             document.body.removeChild(modal);
