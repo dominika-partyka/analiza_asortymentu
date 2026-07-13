@@ -24,7 +24,7 @@
             </button>
 
             <div class="flex items-center gap-1 md:gap-4 text-sm font-medium">
-                <button onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki'])" 
+                <button onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki', 'Smyk'])" 
                         class="nav-link px-3 py-1.5 rounded-lg hover:bg-blue-800/60 transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0 text-white">
                     <i data-lucide="book-open" class="w-4 h-4 text-blue-300"></i> <span class="hidden sm:inline">Książki</span>
                 </button>
@@ -51,7 +51,7 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki'])" 
+            <div onclick="wybierzKategorie('Książki', 'book-open', ['Empik', 'Tania Książka', 'Świat Książki', 'Smyk'])" 
                  class="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer text-center flex flex-col items-center">
                 <div class="w-16 h-16 bg-blue-50 text-[#002f6c] rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                     <i data-lucide="book-open" class="w-8 h-8"></i>
@@ -108,9 +108,9 @@
             </div>
 
             <div class="space-y-2">
-                <label for="search-input" class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Wpisz produkt (np. zeszyt, kredki, monopoly):</label>
+                <label for="search-input" class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Wpisz produkt (np. nazwa książki, kod EAN, monopoly):</label>
                 <div class="flex gap-2">
-                    <input type="text" id="search-input" placeholder="Wpisz słowo kluczowe..." 
+                    <input type="text" id="search-input" placeholder="Wpisz słowo kluczowe lub 13-cyfrowy EAN..." 
                            class="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-inner"
                            onkeypress="if(event.key === 'Enter') szukajImplementacja()">
                     <button onclick="szukajImplementacja()" class="bg-[#002f6c] text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-800 transition-colors cursor-pointer flex items-center gap-2 border-0">
@@ -151,7 +151,7 @@
                     <p class="text-xs text-gray-400 mt-0.5">Produkty zakwalifikowane do końcowego zestawienia cenowego</p>
                 </div>
                 <button onclick="eksportujDoXLSX()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-emerald-700 transition-all cursor-pointer flex items-center gap-1.5 border-0 shadow-sm">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i> Eksportuj do Excel (XLSX)
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> Eksportuj i Kopiuj do Sheets
                 </button>
             </div>
             
