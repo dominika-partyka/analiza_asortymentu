@@ -14,7 +14,7 @@ const SKLEP_DOMENY = {
 };
 
 const SKLEPY_KATEGORII = {
-    "Książki": ["Empik", "Tania Książka", "Tantis"], // CAŁKOWICIE USUNIĘTO: Smyk
+    "Książki": ["Empik", "Tania Książka", "Tantis"], // Smyk usunięty na stałe
     "Back to School": ["Biedronka", "Aldi", "Sinsay", "Action"],
     "Zabawki": ["Smyk", "Allegro", "Empik"]
 };
@@ -58,6 +58,24 @@ function UstawDzisiejszaDate() {
     }
 }
 
+// Pomocnicza funkcja wyliczająca datę poniedziałku (DD-MM) dla Biedronki na podstawie inputu typu date
+function ObliczPoniedzialekBiedronki(dataWpisana) {
+    if (!dataWpisana) return "13-07"; // Domślny fallback bezpieczeństwa
+    
+    const d = new Date(dataWpisana);
+    if (isNaN(d.getTime())) return "13-07";
+
+    const dzienTygodnia = d.getDay(); // 0 = niedziela, 1 = poniedziałek, ..., 6 = sobota
+    const roznica = dzienTygodnia === 0 ? -6 : 1 - dzienTygodnia; // ile dni cofnąć do poniedziałku
+    
+    d.setDate(d.getDate() + roznica);
+    
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    
+    return `${dd}-${mm}`;
+}
+
 // ==========================================
 // 3. NAWIGACJA I PRZEŁĄCZANIE EKRANÓW
 // ==========================================
@@ -89,7 +107,6 @@ function wybierzKategorie(nazwaKategorii, ikona) {
     iconBox.className = `w-12 h-12 rounded-xl flex items-center justify-center text-white ${KOLORY_KATEGORII[nazwaKategorii] || 'bg-blue-600'}`;
     iconBox.innerHTML = `<i data-lucide="${ikona || 'bookmark'}"></i>`;
 
-    // EAN TYLKO DLA KSIĄŻEK
     const boxEan = document.getElementById('box-ean');
     if (nazwaKategorii === 'Książki') {
         boxEan.style.display = 'block';
@@ -135,14 +152,16 @@ function PobierzZaznaczoneSklepy() {
 }
 
 // ==========================================
-// 4. PERFEKCYJNIE DOPASOWANA WYSZUKIWARKA (BEZ SMYKA W KSIĄŻKACH)
+// 4. DOPASOWANA WYSZUKIWARKA (ODPORNA NA LITERÓWKI + MATEMATYKA BIEDRONKI)
 // ==========================================
 function szukajImplementacja() {
     const tytulInput = document.getElementById('search-title');
     const eanInput = document.getElementById('search-ean');
+    const dataInput = document.getElementById('data-analizy');
     
     const tytul = tytulInput ? tytulInput.value.trim() : "";
     const ean = (aktywnaKategoria === 'Książki' && eanInput) ? eanInput.value.trim() : "";
+    const dataWpisana = dataInput ? dataInput.value : "";
 
     if (aktywnaKategoria === 'Książki' && !tytul && ean) {
         alert('Szukanie po samym kodzie EAN jest zablokowane. Wpisz tytuł lub tytuł + EAN.');
@@ -178,6 +197,7 @@ function szukajImplementacja() {
         const encodedQuery = encodeURIComponent(queryStr);
         const queryWithPluses = encodeURIComponent(queryStr).replace(/%20/g, '+'); 
 
+        // Oczyszczony slug (małe litery, bez ogonków, myślniki zamiast spacji) - odporny na literówki
         const queryCleanSlug = queryStr.toLowerCase()
             .replace(/ /g, '-')
             .replace(/[ąąáâãäå]/g, 'a')
@@ -190,7 +210,27 @@ function szukajImplementacja() {
             .replace(/[ń]/g, 'n');
 
         if (domena.includes('biedronka.pl')) {
-            linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodedQuery}`;
+            if (aktywnaKategoria === 'Back to School') {
+                // AUTOMATYCZNA MATEMATYKA DATY DLA BIEDRONKI
+                const poniedzialekDM = ObliczPoniedzialekBiedronki(dataWpisana);
+                
+                // INTELIGENTNE I ODPORNE NA BŁĘDY MAPOWANIE PODROZDZIAŁÓW (STEMMING RDZENIA)
+                let podrozdzial = "back-to-school"; // Fallback ogólny kampanii
+                
+                if (/zesz|not|papi|brul|oxf|herl/i.test(queryCleanSlug)) {
+                    podrozdzial = "zeszyty-papiery-notesy";
+                } else if (/dlu|dłu|pior|piór|olow|ołów|kred|pisa|gumk|nozy|noży|biur|cyrk|lini/i.test(queryCleanSlug)) {
+                    podrozdzial = "artykuly-pismiennicze-i-biurowe";
+                } else if (/plec|torb|work|torn/i.test(queryCleanSlug)) {
+                    podrozdzial = "plecaki-i-torby-szkolne";
+                } else if (/ksia|ksią|podr|slown|słown/i.test(queryCleanSlug)) {
+                    podrozdzial = "ksiazki-i-podreczniki";
+                }
+                
+                linkWeryfikacyjny = `https://www.biedronka.pl/pl/${podrozdzial}-od-${poniedzialekDM}`;
+            } else {
+                linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodedQuery}`;
+            }
         }
         else if (domena.includes('action.com')) {
             linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodedQuery}`;
@@ -204,7 +244,7 @@ function szukajImplementacja() {
         else if (domena.includes('empik.com')) {
             linkWeryfikacyjny = `https://www.empik.com/szukaj/produkt?q=${encodedQuery}`;
         }
-        else if (domena.includes('allgro.pl') || domena.includes('allegro.pl')) {
+        else if (domena.includes('allegro.pl')) {
             linkWeryfikacyjny = `https://allegro.pl/listing?string=${encodedQuery}`;
         }
         else if (domena.includes('taniaksiazka.pl')) {
@@ -272,7 +312,7 @@ function szukajImplementacja() {
 }
 
 // ==========================================
-// 5. OBSŁUGA POZIOMEGO RAPORTU
+// 5. OBSŁUGA POZIOMEGO RAPORTU (START OD KOLUMNY ARTYKUŁ)
 // ==========================================
 function InicjalizujNaglowkiRaportu() {
     const naglowek = document.getElementById('naglowek-tabeli-raportu');
@@ -286,7 +326,7 @@ function InicjalizujNaglowkiRaportu() {
 
     html += `
         <th class="p-2.5 text-center border-l border-gray-200">Linki weryfikacyjne</th>
-        <th class="p-2.5 text-center">Action</th>
+        <th class="p-2.5 text-center">Akcja</th>
     `;
     naglowek.innerHTML = html;
 }
