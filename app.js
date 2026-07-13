@@ -138,7 +138,7 @@ function PobierzZaznaczoneSklepy() {
 }
 
 // ==========================================
-// 4. INTELIGENTNA WYSZUKIWARKA (NAZWA / EAN)
+// 4. INTELIGENTNA WYSZUKIWARKA (NAZWA / EAN) - POPRAWIONA WERSJA DLA TANIEJ KSIĄŻKI
 // ==========================================
 function szukajImplementacja() {
     const tytulInput = document.getElementById('search-title');
@@ -176,9 +176,14 @@ function szukajImplementacja() {
 
         // Budowanie frazy wyszukiwania: Tytuł + EAN (jeśli podano) lub sam Tytuł
         let queryStr = ean ? `${tytul} ${ean}` : tytul;
+        
+        // Domyślne kodowanie URL (np. dla Allegro czy Empiku)
         const encodedQuery = encodeURIComponent(queryStr);
+        
+        // Specjalne kodowanie za pomocą plusów zamiast %20 (wymagane przez Tanią Książkę i niektóre silniki)
+        const queryWithPluses = encodeURIComponent(queryStr).replace(/%20/g, '+');
 
-        // Mapowanie linków bezpośrednich
+        // Mapowanie linków bezpośrednich z uwzględnieniem poprawek silnika
         if (domena.includes('biedronka.pl')) linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodedQuery}`;
         else if (domena.includes('action.com')) linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodedQuery}`;
         else if (domena.includes('aldi.pl')) linkWeryfikacyjny = `https://www.aldi.pl/wyszukiwanie.html?q=${encodedQuery}`;
@@ -186,10 +191,13 @@ function szukajImplementacja() {
         else if (domena.includes('empik.com')) linkWeryfikacyjny = `https://www.empik.com/szukaj/produkt?q=${encodedQuery}`;
         else if (domena.includes('allegro.pl')) linkWeryfikacyjny = `https://allegro.pl/listing?string=${encodedQuery}`;
         else if (domena.includes('smyk.com')) linkWeryfikacyjny = `https://www.smyk.com/szukaj/produkt?q=${encodedQuery}`;
-        else if (domena.includes('taniaksiazka.pl')) linkWeryfikacyjny = `https://www.taniaksiazka.pl/szukaj/zapytanie-${encodedQuery}`;
+        
+        // POPRAWKA: Tania Książka znacznie lepiej reaguje na tradycyjne zapytanie z parametrem ?q= lub czysty slug z plusami
+        else if (domena.includes('taniaksiazka.pl')) linkWeryfikacyjny = `https://www.taniaksiazka.pl/szukaj?q=${queryWithPluses}`;
+        
         else if (domena.includes('tantis.pl')) linkWeryfikacyjny = `https://tantis.pl/szukaj?q=${encodedQuery}`;
 
-        // Zapisujemy link w pamięci podręcznej, aby trafił do ostatecznego wiersza raportu
+        // Zapisujemy poprawny link w pamięci podręcznej
         biezaceLinkiWyszukiwania[sklep] = linkWeryfikacyjny;
 
         const uniqueId = `cena-${index}`;
@@ -223,6 +231,7 @@ function szukajImplementacja() {
     
     RenderujIkony();
 }
+
 
 // ==========================================
 // 5. OBSŁUGA DYNAMICZNEGO I ZGRUPOWANEGO RAPORTU
