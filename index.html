@@ -130,29 +130,23 @@
             </div>
         </div>
 
-        <!-- TABELA WYNIKÓW WYSZUKIWANIA -->
+        <!-- TABELA WYNIKÓW WYSZUKIWANIA (ZMODYFIKOWANA) -->
         <div id="wyniki-box" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <i data-lucide="search-code" class="w-4 h-4 text-blue-600"></i> Wyniki z rynku (Szybkie wyszukanie):
+                <i data-lucide="search-code" class="w-4 h-4 text-blue-600"></i> Wyniki z rynku (Wprowadź ceny):
             </h3>
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-gray-600">
+                <table class="w-full text-left text-sm text-gray-600 border-collapse">
                     <thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">
                         <tr>
-                            <th class="p-3">Sklep</th>
-                            <th class="p-3">Wyszukiwana fraza</th>
-                            <th class="p-3 text-right">Cena</th>
-                            <th class="p-3 text-center">Oferta</th>
+                            <th class="p-3">Wyszukany artykuł</th>
+                            <th class="p-3">Konkurencja i Linki</th>
+                            <th class="p-3 text-right" style="width: 140px;">Cena rynkowa</th>
+                            <th class="p-3 text-center" style="width: 150px;">Zatwierdzenie</th>
                         </tr>
                     </thead>
                     <tbody id="tabela-wynikow"></tbody>
                 </table>
-            </div>
-            <!-- POJEDYNCZY PRZYCISK UWZGLĘDNIENIA CAŁOŚCI -->
-            <div class="flex justify-end mt-4 border-t border-gray-100 pt-4">
-                <button onclick="ZatwierdzMatiXDoRaportu()" class="bg-gray-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all cursor-pointer border-0 flex items-center gap-2 shadow-sm">
-                    <i data-lucide="folder-plus" class="w-4 h-4 text-green-400"></i> Uwzględnij i dodaj do raportu zbiorczego
-                </button>
             </div>
         </div>
 

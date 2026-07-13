@@ -16,7 +16,7 @@ const SKLEP_DOMENY = {
 const SKLEPY_KATEGORII = {
     "Książki": ["Empik", "Tania Książka", "Tantis", "Smyk"],
     "Back to School": ["Biedronka", "Aldi", "Sinsay", "Action"],
-    "Zabawki": ["Smyk", "Allegro", "Empik"] // Brak pola EAN z poziomu kodu
+    "Zabawki": ["Smyk", "Allegro", "Empik"]
 };
 
 const KOLORY_KATEGORII = {
@@ -29,7 +29,7 @@ let aktywneSklepyKategorii = [];
 let aktywnaKategoria = "";
 window.listaRaportu = []; 
 
-// Podręczna tabela przechowująca wygenerowane adresy URL dla bieżącego cyklu wyszukiwania
+// Słownik linków dla aktualnego zestawu wyszukiwania
 let mapowanieLinkowBiezegoWyszukania = {};
 
 // ==========================================
@@ -89,7 +89,7 @@ function wybierzKategorie(nazwaKategorii, ikona) {
     iconBox.className = `w-12 h-12 rounded-xl flex items-center justify-center text-white ${KOLORY_KATEGORII[nazwaKategorii] || 'bg-blue-600'}`;
     iconBox.innerHTML = `<i data-lucide="${ikona || 'bookmark'}"></i>`;
 
-    // EAN TYLKO DLA KSIĄŻEK (Blokada zabawek i back to school)
+    // EAN TYLKO DLA KSIĄŻEK
     const boxEan = document.getElementById('box-ean');
     if (nazwaKategorii === 'Książki') {
         boxEan.style.display = 'block';
@@ -135,7 +135,7 @@ function PobierzZaznaczoneSklepy() {
 }
 
 // ==========================================
-// 4. INTELIGENTNA WYSZUKIWARKA (NAZWA / EAN) - NAPRAWIONE LINKI
+// 4. PERFEKCYJNIE DOPASOWANA WYSZUKIWARKA (1:1 JAK RĘCZNE KLIKNIĘCIE LUPY)
 // ==========================================
 function szukajImplementacja() {
     const tytulInput = document.getElementById('search-title');
@@ -165,52 +165,116 @@ function szukajImplementacja() {
 
     let frazaDoWyswietlenia = tytul;
     if (ean) frazaDoWyswietlenia += ` (EAN: ${ean})`;
+    
+    const escapedNazwaArtykulu = frazaDoWyswietlenia.replace(/'/g, "\\'");
+    const lacznaLiczbaSklepow = wybraneSklepy.length;
 
     wybraneSklepy.forEach((sklep, index) => {
         const domena = SKLEP_DOMENY[sklep] || "google.com";
         let linkWeryfikacyjny = `https://${domena}`;
 
+        // Przygotowanie frazy podstawowej
         let queryStr = ean ? `${tytul} ${ean}` : tytul;
-        const encodedQuery = encodeURIComponent(queryStr);
-        const queryWithPluses = encodeURIComponent(queryStr).replace(/%20/g, '+');
-
-        // MAPOWANIA I POPRAWKI LINKÓW WYSZUKIWARKI:
-        if (domena.includes('biedronka.pl')) linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodedQuery}`;
-        else if (domena.includes('action.com')) linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodedQuery}`;
-        else if (domena.includes('aldi.pl')) linkWeryfikacyjny = `https://www.aldi.pl/wyszukiwanie.html?q=${encodedQuery}`;
-        else if (domena.includes('sinsay.com')) linkWeryfikacyjny = `https://www.sinsay.com/pl/pl/catalogsearch/result/?q=${encodedQuery}`;
-        else if (domena.includes('empik.com')) linkWeryfikacyjny = `https://www.empik.com/szukaj/produkt?q=${encodedQuery}`;
-        else if (domena.includes('allegro.pl')) linkWeryfikacyjny = `https://allegro.pl/listing?string=${encodedQuery}`;
         
-        // NAPRAWIONO: Tania Książka, Tantis oraz Smyk od teraz szukają przez uniwersalny interfejs wejściowy wyszukiwarki "?q="
-        else if (domena.includes('taniaksiazka.pl')) linkWeryfikacyjny = `https://www.taniaksiazka.pl/szukaj?q=${queryWithPluses}`;
-        else if (domena.includes('tantis.pl')) linkWeryfikacyjny = `https://tantis.pl/szukaj?q=${queryWithPluses}`;
-        else if (domena.includes('smyk.com')) linkWeryfikacyjny = `https://www.smyk.com/szukaj/produkt?q=${encodedQuery}`;
+        // --- SPECJALISTYCZNE GENEROWANIE STRINGS DLA RÓŻNYCH SILNIKÓW ---
+        
+        // 1. Standardowe kodowanie małych liter (wymagane m.in. przez Smyka)
+        const encodedQueryLower = encodeURIComponent(queryStr.toLowerCase()); 
+        
+        // 2. Kodowanie z plusami dla Taniej Książki
+        const queryWithPluses = encodeURIComponent(queryStr).replace(/%20/g, '+'); 
+
+        // 3. Konwersja 1:1 dla Tantis (ich lupa zamienia spacje na myślniki, usuwa polskie ogonki i wymusza małe litery)
+        const queryForTantis = queryStr.toLowerCase()
+            .replace(/ /g, '-')
+            .replace(/[ąàáâãäå]/g, 'a')
+            .replace(/[ęèéêë]/g, 'e')
+            .replace(/[óòóôõöø]/g, 'o')
+            .replace(/[śćźż]/g, function(m) {
+                return {'ś':'s', 'ć':'c', 'ź':'z', 'ż':'z'}[m];
+            })
+            .replace(/[ł]/g, 'l')
+            .replace(/[ń]/g, 'n');
+
+        // --- PRECYZYJNE MAPOWANIE SILNIKÓW (ODWZOROWANIE FORMULARZY SYSTEMOWYCH) ---
+        if (domena.includes('biedronka.pl')) {
+            linkWeryfikacyjny = `https://www.biedronka.pl/pl/search?query=${encodeURIComponent(queryStr)}`;
+        }
+        else if (domena.includes('action.com')) {
+            linkWeryfikacyjny = `https://www.action.com/pl-pl/search/?q=${encodeURIComponent(queryStr)}`;
+        }
+        else if (domena.includes('aldi.pl')) {
+            linkWeryfikacyjny = `https://www.aldi.pl/wyszukiwanie.html?q=${encodeURIComponent(queryStr)}`;
+        }
+        else if (domena.includes('sinsay.com')) {
+            linkWeryfikacyjny = `https://www.sinsay.com/pl/pl/catalogsearch/result/?q=${encodeURIComponent(queryStr)}`;
+        }
+        else if (domena.includes('empik.com')) {
+            linkWeryfikacyjny = `https://www.empik.com/szukaj/produkt?q=${encodeURIComponent(queryStr)}`;
+        }
+        else if (domena.includes('allegro.pl')) {
+            linkWeryfikacyjny = `https://allegro.pl/listing?string=${encodeURIComponent(queryStr)}`;
+        }
+        else if (domena.includes('taniaksiazka.pl')) {
+            linkWeryfikacyjny = `https://www.taniaksiazka.pl/szukaj?q=${queryWithPluses}`;
+        }
+        else if (domena.includes('tantis.pl')) {
+            // ODWZOROWANIE LUPY TANTIS: Ich wewnętrzny skrypt kieruje zapytanie bezpośrednio na slug wyszukiwarki bez parametrów ?q=
+            linkWeryfikacyjny = `https://tantis.pl/szukaj/${queryForTantis}`;
+        }
+        else if (domena.includes('smyk.com')) {
+            // ODWZOROWANIE LUPY SMYK: Wymuszone małe litery i poprawny punkt wejścia skryptu /szukaj.html
+            linkWeryfikacyjny = `https://www.smyk.com/szukaj.html?q=${encodedQueryLower}`;
+        }
 
         mapowanieLinkowBiezegoWyszukania[sklep] = linkWeryfikacyjny;
         const uniqueId = `cena-${index}`;
 
         const row = document.createElement('tr');
-        row.className = "border-b border-gray-100 hover:bg-gray-50/80 transition-colors";
-        row.innerHTML = `
-            <td class="p-3 font-bold text-gray-700">${sklep}</td>
-            <td class="p-3">
-                <div class="font-semibold text-gray-900">${frazaDoWyswietlenia}</div>
-                <div class="text-xs text-gray-400 max-w-md truncate">Silnik wyszukiwania domeny ${domena}</div>
+        row.className = "border-b border-gray-100 hover:bg-gray-50/40 transition-colors";
+
+        let htmlZawartosc = "";
+        
+        if (index === 0) {
+            htmlZawartosc += `
+                <td class="p-4 font-bold text-gray-900 bg-gray-50/50 align-middle" rowspan="${lacznaLiczbaSklepow}" style="border-right: 1px solid #f3f4f6; max-w-xs break-words;">
+                    <div class="text-base">${frazaDoWyswietlenia}</div>
+                    <div class="text-xs text-gray-400 font-normal mt-1">Kategoria: ${aktywnaKategoria}</div>
+                </td>
+            `;
+        }
+
+        htmlZawartosc += `
+            <td class="p-3 align-middle">
+                <div class="flex items-center justify-between gap-4">
+                    <span class="font-bold text-gray-700">${sklep}</span>
+                    <a href="${linkWeryfikacyjny}" target="_blank" class="inline-flex items-center bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md hover:bg-blue-100 font-bold text-xs gap-1 border border-blue-200/50 no-underline">
+                        Otwórz silnik <i data-lucide="external-link" class="w-3 h-3"></i>
+                    </a>
+                </div>
             </td>
-            <td class="p-3 text-right">
+            <td class="p-3 text-right align-middle">
                 <div class="inline-flex items-center gap-1">
-                    <input type="number" id="${uniqueId}" data-sklep="${sklep}" step="0.01" min="0" placeholder="brak" 
+                    <input type="number" id="${uniqueId}" data-sklep="${sklep}" step="0.01" min="0" placeholder="-" 
                            class="w-24 bg-white border border-gray-300 rounded-lg p-1.5 text-sm font-bold text-right text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none kl-wejscie-ceny">
                     <span class="text-xs font-bold text-gray-500">zł</span>
                 </div>
             </td>
-            <td class="p-3 text-center">
-                <a href="${linkWeryfikacyjny}" target="_blank" class="inline-flex items-center bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md hover:bg-blue-100 font-bold text-xs gap-1 no-underline border border-blue-200/60 shadow-sm">
-                    Otwórz sklep <i data-lucide="external-link" class="w-3 h-3"></i>
-                </a>
-            </td>
         `;
+
+        if (index === 0) {
+            htmlZawartosc += `
+                <td class="p-3 text-center align-middle bg-gray-50/30" rowspan="${lacznaLiczbaSklepow}" style="border-left: 1px solid #f3f4f6;">
+                    <button onclick="ZatwierdzZbiorczyProdukt('${escapedNazwaArtykulu}')" 
+                            class="bg-[#002f6c] text-white px-5 py-4 rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all cursor-pointer border-0 flex flex-col items-center gap-1 mx-auto shadow-sm group">
+                        <i data-lucide="plus-circle" class="w-5 h-5 text-yellow-400 group-hover:text-white transition-colors"></i> 
+                        <span>Uwzględnij</span>
+                    </button>
+                </td>
+            `;
+        }
+
+        row.innerHTML = htmlZawartosc;
         tabelaWynikow.appendChild(row);
     });
     
@@ -218,7 +282,7 @@ function szukajImplementacja() {
 }
 
 // ==========================================
-// 5. OBSŁUGA POZIOMEGO MACIERZOWEGO RAPORTU
+// 5. ZCZYTYWANIE CEN I BUDOWANIE RAPORTU MACIERZOWEGO
 // ==========================================
 function InicjalizujNaglowkiRaportu() {
     const naglowek = document.getElementById('naglowek-tabeli-raportu');
@@ -241,32 +305,27 @@ function InicjalizujNaglowkiRaportu() {
     naglowek.innerHTML = html;
 }
 
-// JEDEN WSPÓLNY PRZYCISK: Zbiera wszystkie inputy na raz, puste traktuje jako minus i wysyła na dół
-function ZatwierdzMatiXDoRaportu() {
+// URUCHAMIANE JEDYNYM PRZYCISKIEM: Pobiera wszystkie ceny i wstawia minusy tam, gdzie pusto
+function ZatwierdzZbiorczyProdukt(nazwaArtykulu) {
     const tytulInput = document.getElementById('search-title');
     const eanInput = document.getElementById('search-ean');
     const inputData = document.getElementById('data-analizy');
     
-    const tytul = tytulInput ? tytulInput.value.trim() : "";
-    const ean = (aktywnaKategoria === 'Książki' && eanInput) ? eanInput.value.trim() : "";
     const dataAnalizy = inputData && inputData.value ? inputData.value : new Date().toLocaleDateString('pl-PL');
-
-    const ostatecznaNazwaArtykulu = ean ? `${tytul} (EAN: ${ean})` : tytul;
 
     const inputsCen = document.querySelectorAll('.kl-wejscie-ceny');
     let mapyCenProduktów = {};
     let mapyLinkówProduktów = {};
 
-    // Przetwarzanie zbiorcze - usunięto komunikaty blokujące
     inputsCen.forEach(input => {
         const sklep = input.getAttribute('data-sklep');
         const cenaWartosc = parseFloat(input.value);
 
+        // Brak jakichkolwiek komunikatów błędu - puste pole = minus i pracujemy dalej!
         if (!isNaN(cenaWartosc) && cenaWartosc > 0) {
             mapyCenProduktów[sklep] = cenaWartosc.toFixed(2).replace('.', ',') + ' zł';
             mapyLinkówProduktów[sklep] = mapowanieLinkowBiezegoWyszukania[sklep] || `https://${SKLEP_DOMENY[sklep]}`;
         } else {
-            // USUNIĘTO KOMUNIKAT - Jeśli pole jest puste lub równe zero, z automatu wstawiamy minus
             mapyCenProduktów[sklep] = "-";
             mapyLinkówProduktów[sklep] = "";
         }
@@ -278,14 +337,14 @@ function ZatwierdzMatiXDoRaportu() {
         id: idPozycji,
         data: dataAnalizy,
         kategoria: aktywnaKategoria,
-        produkt: ostatecznaNazwaArtykulu,
+        produkt: nazwaArtykulu,
         ceny: mapyCenProduktów,
         linki: mapyLinkówProduktów
     };
 
     window.listaRaportu.push(nowyWpisWiersza);
 
-    // Czyszczenie interfejsu i odświeżenie tabeli raportu
+    // Automatyczne czyszczenie ekranu wyszukiwania po kliknięciu
     document.getElementById('wyniki-box').classList.add('hidden');
     document.getElementById('tabela-wynikow').innerHTML = '';
     tytulInput.value = '';
@@ -327,7 +386,6 @@ function OdswiezWidokTabeliRaportu() {
             }
         });
 
-        // Generowanie zestawu odnośników weryfikacyjnych na końcu wiersza
         let linkiHtml = "";
         aktywneSklepyKategorii.forEach(sklep => {
             const url = item.linki[sklep];
@@ -423,5 +481,5 @@ function eksportujDoXLSX() {
 window.pokazEkranGlowny = pokazEkranGlowny;
 window.wybierzKategorie = wybierzKategorie;
 window.szukajImplementacja = szukajImplementacja;
-window.ZatwierdzMatiXDoRaportu = ZatwierdzMatiXDoRaportu;
+window.ZatwierdzZbiorczyProdukt = ZatwierdzZbiorczyProdukt;
 window.eksportujDoXLSX = eksportujDoXLSX;
