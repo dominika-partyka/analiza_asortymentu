@@ -1,14 +1,6 @@
 // Inicjalizacja ikon Lucide
 lucide.createIcons();
 
-// PULA KLUCZY API
-const PULA_KLUCZY_API = [
-    "DARMOWY_KLUCZ_Z_MAILA_1_SERPAPI",
-    "DARMOWY_KLUCZ_Z_MAILA_2_SERPAPI",
-    "DARMOWY_KLUCZ_Z_MAILA_3_SERPAPI"
-];
-let indeksAktualnegoKlucza = 0;
-
 // ROZBUDOWANA TESTOWA BAZA DANYCH (MOCK-UP)
 const BAZA_GAZETEK = [
     { kategoria: "Back to School", sklep: "Biedronka", produkt: "Zeszyt A5 60k w kratkę", cena: 2.99, url: "https://www.biedronka.pl/pl/sklep/artykuły-szkolne/zeszyt-a5" },
@@ -27,7 +19,7 @@ const BAZA_GAZETEK = [
     { kategoria: "Zabawki", sklep: "Allegro", produkt: "Gra planszowa Monopoly Classic oryginał", cena: 99.00, url: "https://allegro.pl/oferta/monopoly-classic-gra-planszowa" }
 ];
 
-// LOKALNY KOSZYK PRZECHOWUJĄCY ELEMENTY DODANE DO RAPORTU
+// KOSZYK PRZECHOWUJĄCY ELEMENTY DODANE DO RAPORTU
 let KOSZYK_RAPORTU = [];
 
 function wybierzKategorie(nazwa, ikona, sklepy) {
@@ -82,12 +74,22 @@ function szukajImplementacja() {
         return;
     }
     
+    odswiezTabeleWynikow(fraza, aktualnaKategoria);
+}
+
+// ODDZIELNA FUNKCJA RENDEROWANIA WYNIKÓW WYSZUKIWANIA (Aby łatwo ją odświeżać bez alertów)
+function odswiezTabeleWynikow(fraza, kategoria) {
+    const frazaDoSzukania = fraza || document.getElementById('search-input').value.trim().toLowerCase();
+    const katDoSzukania = kategoria || document.getElementById('kat-title').innerText;
+    
+    if(!frazaDoSzukania) return;
+
     const zaznaczoneSklepy = Array.from(document.querySelectorAll('#sklepy-lista input:checked')).map(cb => cb.value);
     
     const znalezione = BAZA_GAZETEK.filter(item => {
-        return item.kategoria === aktualnaKategoria && 
+        return item.kategoria === katDoSzukania && 
                zaznaczoneSklepy.includes(item.sklep) && 
-               item.produkt.toLowerCase().includes(fraza);
+               item.produkt.toLowerCase().includes(frazaDoSzukania);
     });
     
     const wynikiBox = document.getElementById('wyniki-box');
@@ -102,10 +104,27 @@ function szukajImplementacja() {
     }
     
     znalezione.forEach((item) => {
-        // Generowanie parametrów tekstowych bez konfliktów ze znakami cudzysłowu
         const bezpiecznaNazwa = item.produkt.replace(/'/g, "\\'");
         const bezpiecznyUrl = item.url.replace(/'/g, "\\'");
         
+        // Sprawdzamy czy ta konkretna oferta jest już w koszyku
+        const istnieje = KOSZYK_RAPORTU.some(r => r.nazwaWyszukiwana === item.produkt && r.ofertySklepowe[item.sklep]);
+        
+        let przyciskRaportu = '';
+        if (istnieje) {
+            przyciskRaportu = `
+                <button onclick="usunBezposrednioZRaportu('${item.sklep}', '${bezpiecznaNazwa}')" class="bg-red-50 text-red-700 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-1 mx-auto">
+                    Usuń z raportu
+                </button>
+            `;
+        } else {
+            przyciskRaportu = `
+                <button onclick="dodajBezposrednioDoRaportu('${item.sklep}', '${bezpiecznaNazwa}', ${item.cena}, '${bezpiecznyUrl}')" class="bg-green-50 text-green-700 hover:bg-green-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-1 mx-auto">
+                    Dodaj do raportu
+                </button>
+            `;
+        }
+
         tabelaTbody.innerHTML += `
             <tr class="border-b border-gray-100 hover:bg-gray-50/80 transition-colors">
                 <td class="p-3 font-bold text-gray-700">${item.sklep}</td>
@@ -114,17 +133,13 @@ function szukajImplementacja() {
                 <td class="p-3 text-center">
                     <a href="${item.url}" target="_blank" class="text-blue-600 hover:text-blue-800 font-bold underline text-xs">Przejdź</a>
                 </td>
-                <td class="p-3 text-center">
-                    <button onclick="dodajBezposrednioDoRaportu('${item.sklep}', '${bezpiecznaNazwa}', ${item.cena}, '${bezpiecznyUrl}')" class="bg-green-50 text-green-700 hover:bg-green-600 hover:text-white px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer border-0">
-                        Dodaj do raportu
-                    </button>
-                </td>
+                <td class="p-3 text-center">${przyciskRaportu}</td>
             </tr>
         `;
     });
 }
 
-// BEZPOŚREDNI ZAPIS DO KOSZYKA ANALITYCZNEGO (POMINIĘCIE SYMULATORA)
+// DODAWANIE DO RAPORTU (BEZ ALERTÓW)
 function dodajBezposrednioDoRaportu(sklep, produkt, cena, url) {
     let produktWKoszyku = KOSZYK_RAPORTU.find(item => item.nazwaWyszukiwana === produkt);
     
@@ -142,9 +157,30 @@ function dodajBezposrednioDoRaportu(sklep, produkt, cena, url) {
     };
     
     document.getElementById('raport-box').classList.remove('hidden');
+    
     odswiezTabeleRaportu();
+    odswiezTabeleWynikow(); // Synchroniczne odświeżenie przycisków w tabeli górnej
 }
 
+// USUWANIE Z RAPORTU
+function usunBezposrednioZRaportu(sklep, produkt) {
+    let produktWKoszyku = KOSZYK_RAPORTU.find(item => item.nazwaWyszukiwana === produkt);
+    
+    if (produktWKoszyku) {
+        // Usuwamy ofertę wybranego sklepu
+        delete produktWKoszyku.ofertySklepowe[sklep];
+        
+        // Jeśli produkt nie ma już ofert z żadnego sklepu, usuwamy cały wiersz artykułu
+        if (Object.keys(produktWKoszyku.ofertySklepowe).length === 0) {
+            KOSZYK_RAPORTU = KOSZYK_RAPORTU.filter(item => item.nazwaWyszukiwana !== produkt);
+        }
+    }
+    
+    odswiezTabeleRaportu();
+    odswiezTabeleWynikow();
+}
+
+// ODSWIEŻANIE TABELI ZBIORCZEJ NA DOLE
 function odswiezTabeleRaportu() {
     const checkboxes = Array.from(document.querySelectorAll('#sklepy-lista input'));
     if(checkboxes.length === 0) return;
@@ -159,6 +195,7 @@ function odswiezTabeleRaportu() {
         htmlNaglowka += `<th class="p-3 text-center bg-gray-50/50">Cena ${sklep}</th>`;
         htmlNaglowka += `<th class="p-3 text-center">Link ${sklep}</th>`;
     });
+    htmlNaglowka += `<th class="p-3 text-center bg-red-50 text-red-700">Akcja</th>`;
     headerRow.innerHTML = htmlNaglowka;
     
     bodyTable.innerHTML = '';
@@ -183,6 +220,16 @@ function odswiezTabeleRaportu() {
             }
         });
         
+        // Przycisk usuwania całego wiersza z tabeli zbiorczej
+        const bezpiecznaNazwa = item.nazwaWyszukiwana.replace(/'/g, "\\'");
+        wierszHtml += `
+            <td class="p-3 text-center bg-red-50/20">
+                <button onclick="usunCalyArtykulZRaportu('${bezpiecznaNazwa}')" class="text-red-600 hover:text-red-900 font-bold text-xs cursor-pointer bg-transparent border-0">
+                    Usuń artykuł
+                </button>
+            </td>
+        `;
+        
         wierszHtml += `</tr>`;
         bodyTable.innerHTML += wierszHtml;
     });
@@ -190,7 +237,14 @@ function odswiezTabeleRaportu() {
     lucide.createIcons();
 }
 
-function eksportujDoCSV() {
+function usunCalyArtykulZRaportu(produkt) {
+    KOSZYK_RAPORTU = KOSZYK_RAPORTU.filter(item => item.nazwaWyszukiwana !== produkt);
+    odswiezTabeleRaportu();
+    odswiezTabeleWynikow();
+}
+
+// NOWA EKSPORTACJA: GENEROWANIE CZYSTEGO FORMATU EXCEL (XLSX)
+function eksportujDoXLSX() {
     const aktywneSklepy = Array.from(document.querySelectorAll('#sklepy-lista input:checked')).map(cb => cb.value);
     
     if (KOSZYK_RAPORTU.length === 0) {
@@ -198,41 +252,40 @@ function eksportujDoCSV() {
         return;
     }
     
-    let linieCsv = [];
-    let naglowki = ["Nazwa artykulu"];
+    // 1. Definiujemy nagłówki pierwszego wiersza Excela
+    let naglowki = ["Nazwa artykułu"];
     aktywneSklepy.forEach(sklep => {
         naglowki.push(`Cena ${sklep}`);
         naglowki.push(`Link ${sklep}`);
     });
-    linieCsv.push(naglowki.join(";"));
     
+    let daneArkusza = [naglowki];
+    
+    // 2. Mapujemy koszyk na wiersze danych Excela
     KOSZYK_RAPORTU.forEach(item => {
-        let wiersz = [ `"${item.nazwaWyszukiwana.replace(/"/g, '""')}"` ];
+        let wiersz = [item.nazwaWyszukiwana];
         
         aktywneSklepy.forEach(sklep => {
             const daneSklepu = item.ofertySklepowe[sklep];
             if (daneSklepu) {
-                wiersz.push(`"${daneSklepu.cena.toFixed(2).replace('.', ',')}"`);
-                wiersz.push(`"${daneSklepu.link}"`);
+                wiersz.push(daneSklepu.cena); // Wpisujemy jako liczbę, Excel sam sformatuje walutę
+                wiersz.push(daneSklepu.link);
             } else {
-                wiersz.push('""');
-                wiersz.push('""');
+                wiersz.push(""); // Puste pole w Excelu
+                wiersz.push("");
             }
         });
         
-        linieCsv.push(wiersz.join(";"));
+        daneArkusza.push(wiersz);
     });
     
-    const zawartoscCsv = "\uFEFF" + linieCsv.join("\n");
-    const blob = new Blob([zawartoscCsv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    // 3. Wykorzystanie biblioteki SheetJS do skompletowania pliku binarnego .xlsx
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(daneArkusza);
     
-    const linkPobierania = document.createElement("a");
+    XLSX.utils.book_append_sheet(wb, ws, "Raport Cenowy");
+    
+    // Pobieranie pliku
     const dataAnalizy = document.getElementById('data-analizy').value;
-    linkPobierania.setAttribute("href", url);
-    linkPobierania.setAttribute("download", `Raport_Cenowy_${dataAnalizy}.csv`);
-    document.body.appendChild(linkPobierania);
-    
-    linkPobierania.click();
-    document.body.removeChild(linkPobierania);
+    XLSX.writeFile(wb, `Raport_Cenowy_${dataAnalizy}.xlsx`);
 }

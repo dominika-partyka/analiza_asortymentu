@@ -6,6 +6,8 @@
     <title>Lidl Analiza Konkurencji - Panel Asystenta</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Biblioteka SheetJS do bezpośredniego generowania plików XLSX (Excel) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans pt-16">
 
@@ -143,12 +145,12 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-4 mb-4">
                 <div>
                     <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                        <i data-lucide="folder-heart" class="w-4 h-4 text-green-600"></i> Twoja lista do eksportu (Google Sheets)
+                        <i data-lucide="folder-heart" class="w-4 h-4 text-green-600"></i> Twoja lista do eksportu (Google Sheets / Excel)
                     </h3>
                     <p class="text-xs text-gray-400 mt-0.5">Produkty zakwalifikowane do końcowego zestawienia cenowego</p>
                 </div>
-                <button onclick="eksportujDoCSV()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-emerald-700 transition-all cursor-pointer flex items-center gap-1.5 border-0 shadow-sm">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i> Eksportuj do Google Sheets (CSV)
+                <button onclick="eksportujDoXLSX()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-emerald-700 transition-all cursor-pointer flex items-center gap-1.5 border-0 shadow-sm">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> Eksportuj do Excel (XLSX)
                 </button>
             </div>
             
@@ -167,7 +169,7 @@
     </div>
 
     <footer class="text-center text-xs text-gray-400 my-12">
-        Narzędzie wewnętrzne przygotowane w ramach programu stażowego. Prototyp bezpośredniego zapisu struktur dynamicznych.
+        Narzędzie wewnętrzne przygotowane w ramach programu stażowego. Moduł XLSX z obsługą pełnego cyklu stanów raportowania.
     </footer>
 
     <script src="app.js"></script>
