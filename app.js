@@ -1,7 +1,7 @@
 // ==========================================
-// 1. KONFIGURACJA I ZMIENNE GLOBALNE
+// 1. CONFIGURATION AND GLOBAL VARIABLES
 // ==========================================
-const GOOGLE_API_KEY = "AIzaSyD...[TWÓJ_KLUCZ_API]"; // Upewnij się, że masz tu swój prawidłowy klucz
+const GOOGLE_API_KEY = "AIzaSyD...[TWOJ_KLUCZ_API]"; // Put your actual API key here
 const GOOGLE_CX = "5393052c79d0c4c4a";
 
 const SKLEP_DOMENY = {
@@ -16,7 +16,6 @@ const SKLEP_DOMENY = {
     "Allegro": "allegro.pl"
 };
 
-// Domyślne sklepy dla kategorii "Back to School"
 let aktywneSklepy = ["Biedronka", "Aldi", "Sinsay", "Action"];
 let wybraneSklepyFiltru = [];
 let aktywnaKategoria = "Back to School";
@@ -25,13 +24,47 @@ if (typeof window.listaRaportu === 'undefined') {
     window.listaRaportu = [];
 }
 
-// Uruchomienie po załadowaniu strony
+// ==========================================
+// 2. CORE INITIALIZATION & MENU NAVIGATION
+// ==========================================
 document.addEventListener("DOMContentLoaded", () => {
+    // 1. Initialise Lucide Icons safely
+    RenderujIkony();
+
+    // 2. Setup dates and filters
     InicjalizujObslugeFiltrow();
     UstawDzisiejszaDate();
     
-    // Podpięcie wyszukiwania pod przycisk i Enter
-    const btnSzukaj = document.getElementById('search-button') || document.querySelector('.bg-blue-900') || document.querySelector('button');
+    // 3. NAVIGATION: Fixes the unclickable "Back to School" tile
+    const kafelkiMenu = document.querySelectorAll('[data-kategoria]');
+    const sekcjaMenu = document.getElementById('main-menu') || document.querySelector('.grid');
+    const sekcjaPanelu = document.getElementById('panel-analityczny') || document.body.firstElementChild; 
+    const btnPowrot = document.getElementById('btn-powrot') || document.querySelector('header button') || document.querySelector('button');
+
+    // Dynamic switching between home menu and the tool panel
+    kafelkiMenu.forEach(kafelek => {
+        kafelek.addEventListener('click', () => {
+            const kat = kafelek.getAttribute('data-kategoria') || "Back to School";
+            aktywnaKategoria = kat;
+            
+            // Show panel, hide main grid
+            if(sekcjaMenu) sekcjaMenu.classList.add('hidden');
+            if(sekcjaPanelu) sekcjaPanelu.classList.remove('hidden');
+            
+            const naglowekKat = document.getElementById('nazwa-aktywnej-kategorii') || document.querySelector('h1');
+            if (naglowekKat) naglowekKat.innerText = kat;
+        });
+    });
+
+    if (btnPowrot) {
+        btnPowrot.addEventListener('click', () => {
+            if(sekcjaPanelu) sekcjaPanelu.classList.add('hidden');
+            if(sekcjaMenu) sekcjaMenu.classList.remove('hidden');
+        });
+    }
+    
+    // 4. SEARCH TRIGGER LINKS
+    const btnSzukaj = document.getElementById('search-button') || document.querySelector('.bg-blue-900') || document.querySelector('button[onclick*="szukaj"]');
     if (btnSzukaj) {
         btnSzukaj.addEventListener('click', szukajImplementacja);
     }
@@ -44,8 +77,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+function RenderujIkony() {
+    if (window.lucide) {
+        window.lucide.createIcons();
+    } else {
+        // Fallback injection if CDN is loading slow
+        setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 1000);
+    }
+}
+
 // ==========================================
-// 2. FUNKCJE POMOCNICZE I INTERFEJS
+// 3. INTERFACE COMPLEMENTS
 // ==========================================
 function UstawDzisiejszaDate() {
     const inputData = document.getElementById('data-analizy');
@@ -63,7 +105,6 @@ function InicjalizujObslugeFiltrow() {
     wybraneSklepyFiltru = [];
     
     checkboxes.forEach(cb => {
-        // Ustawiamy stan początkowy na bazie aktywnych sklepów
         const labelText = cb.parentElement.textContent.trim();
         if (aktywneSklepy.includes(labelText)) {
             cb.checked = true;
@@ -89,7 +130,7 @@ function znajdzCeneWOpisie(tekst) {
 }
 
 // ==========================================
-// 3. SILNIK HYBRYDOWEGO WYSZUKIWANIA
+// 4. HYBRID ENGINE (AUTO API + MANUAL OVERRIDE)
 // ==========================================
 async function szukajImplementacja() {
     const queryInput = document.getElementById('search-input');
@@ -108,7 +149,7 @@ async function szukajImplementacja() {
     tabelaWynikow.innerHTML = `
         <tr>
             <td colspan="5" class="p-6 text-center text-sm text-gray-500 font-medium">
-                <span class="inline-block animate-spin mr-2">⏳</span> Pobieram realne ceny i generuję panele weryfikacji...
+                <span class="inline-block animate-spin mr-2">⏳</span> Pobieram dane i przygotowuję arkusz weryfikacji...
             </td>
         </tr>
     `;
@@ -118,20 +159,17 @@ async function szukajImplementacja() {
         const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}`;
         const response = await fetch(url);
         const data = await response.json();
-        if (data.items) {
-            googleItems = data.items;
-        }
+        if (data.items) googleItems = data.items;
     } catch (e) {
-        console.log("Google API offline / limit rynkowy. Tryb wprowadzania ręcznego.");
+        console.log("Google API status override.");
     }
 
     tabelaWynikow.innerHTML = '';
-
     const ostateczneSklepy = wybraneSklepyFiltru.length > 0 ? wybraneSklepyFiltru : aktywneSklepy;
 
     ostateczneSklepy.forEach((sklep, index) => {
         const domena = SKLEP_DOMENY[sklep] || "google.com";
-        let znalezionyOpis = "Zweryfikuj dostępność klikając przycisk obok.";
+        let znalezionyOpis = "Brak automatycznego dopasowania. Kliknij 'Otwórz sklep' i wprowadź cenę ręcznie.";
         let automatycznaCena = "";
 
         const dopasowanyWynik = googleItems.find(item => item.link.toLowerCase().includes(domena.toLowerCase()));
@@ -182,11 +220,11 @@ async function szukajImplementacja() {
         tabelaWynikow.appendChild(row);
     });
     
-    if (window.lucide) lucide.createIcons();
+    RenderujIkony();
 }
 
 // ==========================================
-// 4. RAPORTOWANIE I EKSPORT EXCEL (XLSX)
+// 5. REPORT GENERATION & EXCEL EXPORT
 // ==========================================
 function ZatwierdzPozycje(sklep, inputId) {
     const query = document.getElementById('search-input').value.trim();
@@ -194,7 +232,7 @@ function ZatwierdzPozycje(sklep, inputId) {
     const cenaWpisana = parseFloat(cenaInput.value);
 
     if (isNaN(cenaWpisana) || cenaWpisana <= 0) {
-        alert('Wpisz lub zweryfikuj cenę rynkową przed dodaniem produktu do bazy!');
+        alert('Wpisz poprawną cenę przed dodaniem do raportu!');
         return;
     }
 
@@ -234,14 +272,12 @@ function WstrzyknijDoTabeliRaportu(sklep, produkt, cena) {
     }
 }
 
-// Funkcja eksportująca bazę do pliku Excel (XLSX)
 function eksportujDoExcel() {
     if (window.listaRaportu.length === 0) {
-        alert("Twój raport jest pusty! Dodaj najpierw produkty za pomocą przycisku 'Uwzględnij'.");
+        alert("Raport jest pusty!");
         return;
     }
 
-    // Mapowanie danych na format arkusza
     const daneDoExcela = window.listaRaportu.map(item => ({
         "Data analizy": item.data,
         "Kategoria": item.kategoria,
@@ -250,22 +286,17 @@ function eksportujDoExcel() {
         "Cena rynkowa": item.cena
     }));
 
-    // Tworzenie arkusza przez bibliotekę SheetJS (XLSX)
     const worksheet = XLSX.utils.json_to_sheet(daneDoExcela);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Analiza Cenowa");
 
-    // Automatyczne dopasowanie szerokości kolumn
-    const maxProps = [{wch: 15}, {wch: 20}, {wch: 15}, {wch: 40}, {wch: 15}];
-    worksheet['!cols'] = maxProps;
+    worksheet['!cols'] = [{wch: 15}, {wch: 20}, {wch: 15}, {wch: 40}, {wch: 15}];
 
-    // Generowanie nazwy pliku z datą
     const inputData = document.getElementById('data-analizy');
     const dataPliku = inputData ? inputData.value : "raport";
     
     XLSX.writeFile(workbook, `Raport_Cenowy_Konkurencja_${dataPliku}.xlsx`);
 }
 
-// Globalne wystawienie funkcji dla przycisków HTML
 window.ZatwierdzPozycje = ZatwierdzPozycje;
 window.eksportujDoExcel = eksportujDoExcel;
