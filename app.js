@@ -96,6 +96,7 @@ function przepnijFiltrSklepu(cb) {
 }
 
 // Główna implementacja wyszukiwania za pomocą Google API
+// Główna implementacja wyszukiwania za pomocą Google API
 async function szukajImplementacja() {
     const query = document.getElementById('search-input').value.trim();
     const tabelaWynikow = document.getElementById('tabela-wynikow');
@@ -120,13 +121,15 @@ async function szukajImplementacja() {
         </tr>
     `;
 
-    // Konwersja zaznaczonych sklepów na odpowiadające im domeny (np. ['Empik'] -> ['empik.com'])
+    // Konwersja zaznaczonych sklepów na domeny
     const szukaneDomeny = wybraneSklepyFiltru
         .map(sklep => SKLEP_DOMENY[sklep])
         .filter(domena => domena !== undefined);
 
-    // Konstruowanie zapytania ograniczającego wyniki do wybranych stron (np. "site:empik.com OR site:taniaksiazka.pl")
-    const filtrStron = szukaneDomeny.map(domena => `site:${domena}`).join(' OR ');
+    // Jeśli nic nie zaznaczono, bierzemy domyślne dla kategorii
+    const ostateczneDomeny = szukaneDomeny.length > 0 ? szukaneDomeny : aktywneSklepy.map(s => SKLEP_DOMENY[s]);
+
+    const filtrStron = ostateczneDomeny.map(domena => `site:${domena}`).join(' OR ');
     const pelneZapytanie = `${query} (${filtrStron})`;
 
     const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(pelneZapytanie)}`;
@@ -148,18 +151,18 @@ async function szukajImplementacja() {
             return;
         }
 
-        // Renderowanie pobranych rekordów do Twojej tabeli
-        data.items.forEach((item, index) => {
-            // Dopasowanie powracającej domeny do ładnej nazwy sklepu w interfejsie
+        // Renderowanie pobranych rekordów
+        data.items.forEach((item) => {
             let nazwaSklepu = 'Konkurencja';
+            const linkUrl = item.link.toLowerCase();
+            
             for (const [klucz, domena] of Object.entries(SKLEP_DOMENY)) {
-                if (item.displayLink && item.displayLink.includes(domena)) {
+                if (linkUrl.includes(domena.toLowerCase())) {
                     nazwaSklepu = klucz;
                     break;
                 }
             }
 
-            // Próba inteligentnego wyciągnięcia ceny z opisu
             const wyciagnietaCena = wyciągnijCeneZOpisu(item.snippet || '');
 
             const row = document.createElement('tr');
@@ -170,7 +173,7 @@ async function szukajImplementacja() {
                     <div class="font-semibold text-gray-900">${item.title}</div>
                     <div class="text-xs text-gray-400 max-w-md truncate">${item.snippet || ''}</div>
                 </td>
-                <td class="p-3 text-right font-bold text-emerald-600 fs-base">${wyciagnietaCena}</td>
+                <td class="p-3 text-right font-bold text-emerald-600 text-base">${wyciagnietaCena}</td>
                 <td class="p-3 text-center">
                     <a href="${item.link}" target="_blank" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium text-xs gap-0.5 no-underline">
                         Otwórz <i data-lucide="external-link" class="w-3 h-3"></i>
